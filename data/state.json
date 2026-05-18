@@ -326,6 +326,15 @@
         "Geschichte",
         "Sozialkunde"
       ]
+    },
+    {
+      "id": "022d4509-00c5-4901-bb04-350ee929703e",
+      "name": "Frau Schart",
+      "code": "LSC",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
