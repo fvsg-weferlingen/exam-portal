@@ -1,0 +1,471 @@
+{
+  "teachers": [
+    {
+      "id": "teacher-default-wag",
+      "name": "Herr Wagner",
+      "code": "WAG",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
+    },
+    {
+      "id": "d3f02757-7689-4954-a3cf-09ff1c4a3c7a",
+      "name": "Frau Abraham",
+      "code": "ABR",
+      "subjects": [
+        "Biologie",
+        "Ethik"
+      ]
+    },
+    {
+      "id": "1917614d-968d-42fc-97f2-32b5ba6ef097",
+      "name": "Frau Anders",
+      "code": "AND",
+      "subjects": [
+        "Englisch",
+        "Deutsch",
+        "Russisch"
+      ]
+    },
+    {
+      "id": "572a2a92-22ec-44bf-a78c-718e3ed9a982",
+      "name": "Herr Arend",
+      "code": "ARE",
+      "subjects": [
+        "Mathematik",
+        "Sport"
+      ]
+    },
+    {
+      "id": "51f18dd3-af68-4bee-b035-556e3f19c40f",
+      "name": "Herr Assel",
+      "code": "CAS",
+      "subjects": [
+        "Spanisch",
+        "Sozialkunde"
+      ]
+    },
+    {
+      "id": "18b64dad-da74-4dab-a1a9-7a9e5c046eeb",
+      "name": "Frau Aust",
+      "code": "AUT",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "dd317e05-d819-4257-9ecb-86a45e3969a4",
+      "name": "Herr Dr. Börger",
+      "code": "BRG",
+      "subjects": [
+        "Chemie"
+      ]
+    },
+    {
+      "id": "5c690add-cf01-435b-897d-f843a065262d",
+      "name": "Frau Cornelsen",
+      "code": "COR",
+      "subjects": [
+        "Deutsch",
+        "Wirtschaft"
+      ]
+    },
+    {
+      "id": "e875272e-0614-4924-975f-8ab21c0315f7",
+      "name": "Frau Dalhoff",
+      "code": "DAL",
+      "subjects": [
+        "Englisch",
+        "Ehtik",
+        "PHI"
+      ]
+    },
+    {
+      "id": "0aaeaede-f929-4865-8079-f4ea5e6f5555",
+      "name": "Frau Döring",
+      "code": "DÖR",
+      "subjects": [
+        "Mathe",
+        "Musik"
+      ]
+    },
+    {
+      "id": "5534adbb-5c3f-4f52-8a43-5f6081cde06a",
+      "name": "Herr Dr. Niemeck",
+      "code": "NIE",
+      "subjects": [
+        "Kunst",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "aa908153-bcce-47d5-8ba1-fa00ff83ff70",
+      "name": "Frau Drespa",
+      "code": "DRS",
+      "subjects": [
+        "Geographie",
+        "Sozialkunde"
+      ]
+    },
+    {
+      "id": "8fd72810-90ac-4bb0-ad9e-ec7cc8906070",
+      "name": "Frau Ebeling",
+      "code": "EBE",
+      "subjects": [
+        "Chemie",
+        "Deutsch"
+      ]
+    },
+    {
+      "id": "08697a3e-a2e6-4ccc-9fdc-05074df9e69c",
+      "name": "Herr Franke",
+      "code": "FRN",
+      "subjects": [
+        "Deutsch"
+      ]
+    },
+    {
+      "id": "35f611b0-9f3f-46a0-b467-1edbc0a655c8",
+      "name": "Frau Gräf",
+      "code": "GRF",
+      "subjects": [
+        "Deutsch",
+        "Kunst"
+      ]
+    },
+    {
+      "id": "94afde2f-3500-46dc-9dc4-bff3c8cb4960",
+      "name": "Herr Grießbach",
+      "code": "GRI",
+      "subjects": [
+        "Deutsch",
+        "Geschichte",
+        "Ehtik",
+        "Kunst"
+      ]
+    },
+    {
+      "id": "ba4a539c-45df-4f80-8c50-f04e1c06f15e",
+      "name": "Frau Hartmann",
+      "code": "HAR",
+      "subjects": [
+        "Deutsch",
+        "Mathe",
+        "Wirtschaft"
+      ]
+    },
+    {
+      "id": "eb6364dd-6bc4-4b43-9aed-62f3393ad958",
+      "name": "Frau Heinze",
+      "code": "HEN",
+      "subjects": [
+        "Informatik",
+        "Russisch"
+      ]
+    },
+    {
+      "id": "e338e3dd-7a3d-4a44-bd71-78d775c4f085",
+      "name": "Frau Herrman",
+      "code": "HER",
+      "subjects": [
+        "Spanisch",
+        "Ehtik"
+      ]
+    },
+    {
+      "id": "4b4955b3-1c64-4a81-b237-fb1312c1f5bc",
+      "name": "Herr Hübner",
+      "code": "HÜB",
+      "subjects": [
+        "Sport",
+        "Wirtschaft",
+        "Geographie"
+      ]
+    },
+    {
+      "id": "d4cb8553-45d3-4b4d-9b92-93ce844ea6a1",
+      "name": "Frau Jahn",
+      "code": "JAH",
+      "subjects": [
+        "Deutsch",
+        "Wirtschaft"
+      ]
+    },
+    {
+      "id": "c78d6d96-524d-4067-8b13-16bf3ff8869a",
+      "name": "Frau Jakisch",
+      "code": "JAK",
+      "subjects": [
+        "Wirtschaft",
+        "Sport"
+      ]
+    },
+    {
+      "id": "c3cb68d4-d54b-43f0-9159-b4315e66f1df",
+      "name": "Herr Karkili",
+      "code": "KAR",
+      "subjects": [
+        "Englisch"
+      ]
+    },
+    {
+      "id": "9427ff2e-a606-4bb5-bc1a-76bd7112a70c",
+      "name": "Frau Kothe",
+      "code": "KTE",
+      "subjects": [
+        "Mathe",
+        "Physik"
+      ]
+    },
+    {
+      "id": "34308fd3-a1be-4448-b2f9-5f8543adff8d",
+      "name": "Frau Lagemann",
+      "code": "LAG",
+      "subjects": [
+        "Biologie",
+        "Chemie"
+      ]
+    },
+    {
+      "id": "0fb86c9f-4e6a-4dbe-bbc1-ae7398108d5d",
+      "name": "Frau Lemm",
+      "code": "LEM",
+      "subjects": [
+        "Spanisch",
+        "Französisch"
+      ]
+    },
+    {
+      "id": "4fabed1f-aad1-4024-8226-1f87acc2cdca",
+      "name": "Frau Armerding",
+      "code": "ARM",
+      "subjects": [
+        "Französisch",
+        "Russisch"
+      ]
+    },
+    {
+      "id": "92deac4e-60d3-4656-91e0-bdd13e09d3a3",
+      "name": "Frau Lindner",
+      "code": "LIN",
+      "subjects": [
+        "Chemie",
+        "Geographie"
+      ]
+    },
+    {
+      "id": "3dbda3ea-f0c0-4722-9fff-3e500a200ac0",
+      "name": "Frau Mahrenholz",
+      "code": "MAH",
+      "subjects": [
+        "Mathematik",
+        "Religion"
+      ]
+    },
+    {
+      "id": "a4428390-fbee-417c-8370-315f0113396a",
+      "name": "Herr Mehr",
+      "code": "MHR",
+      "subjects": [
+        "Sport",
+        "Psychologie"
+      ]
+    },
+    {
+      "id": "60484caa-3ca1-4375-9ae3-71ade24944a3",
+      "name": "Frau Mischke",
+      "code": "MIK",
+      "subjects": [
+        "Deutsch",
+        "Musik"
+      ]
+    },
+    {
+      "id": "3ce88d53-2bbd-47a6-aa49-0dfbb016fd8e",
+      "name": "Frau Neumann-Schindler",
+      "code": "NSC",
+      "subjects": [
+        "Musik",
+        "Ehtik"
+      ]
+    },
+    {
+      "id": "e7befcff-2ce3-4299-b079-d7840848138a",
+      "name": "Her Neuschulz",
+      "code": "NEU",
+      "subjects": [
+        "Geographie",
+        "Wirtschaft"
+      ]
+    },
+    {
+      "id": "282ddbbd-ff01-4e1f-beb7-154edfb9640a",
+      "name": "Herr Preißler",
+      "code": "PRE",
+      "subjects": [
+        "Sport",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "7a010e4a-63b9-4cb3-bbce-052b91ca3ce3",
+      "name": "Frau Dr. Preißler",
+      "code": "PRL",
+      "subjects": [
+        "Biologie",
+        "Chemie"
+      ]
+    },
+    {
+      "id": "b3c5ce26-a5af-4ee9-a314-b27f113fa326",
+      "name": "Herr Rumler",
+      "code": "RUM",
+      "subjects": [
+        "Geschichte",
+        "Sozialkunde"
+      ]
+    },
+    {
+      "id": "022d4509-00c5-4901-bb04-350ee929703e",
+      "name": "Frau Schart",
+      "code": "LSC",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "9ab1d150-8ff5-4b4b-9c3b-fadf614c508d",
+      "name": "Herr Scheffler",
+      "code": "PSC",
+      "subjects": [
+        "Chemie",
+        "Mathematik"
+      ]
+    },
+    {
+      "id": "8819e654-ffe1-4322-8e24-0ebcfd3b8bfc",
+      "name": "Frau Scholz",
+      "code": "KSC",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
+    },
+    {
+      "id": "689b7575-33d9-4b52-adba-38ea04320463",
+      "name": "Herr Schönbach",
+      "code": "SÖB",
+      "subjects": [
+        "Deutsch",
+        "Ehtik"
+      ]
+    },
+    {
+      "id": "8bd6c872-ee63-4ae9-b7d1-8722f4ffc434",
+      "name": "Frau Schulze",
+      "code": "ESC",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
+    },
+    {
+      "id": "d1aa7ded-618c-43b3-afbf-c893551f0713",
+      "name": "Herr Schulze",
+      "code": "ISC",
+      "subjects": [
+        "Musik",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "c6d97ddf-297e-472c-83f9-99b6fc0ecf9b",
+      "name": "Frau Seeger",
+      "code": "SEE",
+      "subjects": [
+        "Französisch",
+        "Spanisch"
+      ]
+    },
+    {
+      "id": "d1cf56e3-a3b8-4e1b-9a46-0d25c79b1870",
+      "name": "Frau Sommer",
+      "code": "SOM",
+      "subjects": [
+        "Deutsch",
+        "Russisch"
+      ]
+    },
+    {
+      "id": "8a002ab7-8e8f-4ca5-8454-1d2c6b6406fd",
+      "name": "Herr Steohan",
+      "code": "STE",
+      "subjects": [
+        "Mathematik",
+        "Physik",
+        "Astronomie"
+      ]
+    },
+    {
+      "id": "053a9c87-3d37-4770-b391-16dca47c1547",
+      "name": "Frau Vogel",
+      "code": "VOG",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
+    },
+    {
+      "id": "3d537370-ecd9-47ac-9401-77034d530b32",
+      "name": "Frau Warweg",
+      "code": "WAW",
+      "subjects": [
+        "Englisch",
+        "Sozialkunde"
+      ]
+    },
+    {
+      "id": "fc1de7b7-fd29-4734-92da-5043b2d7418b",
+      "name": "Frau Wanke",
+      "code": "WAN",
+      "subjects": [
+        "Deutsch",
+        "Englisch",
+        "Russisch"
+      ]
+    },
+    {
+      "id": "f6b4c214-a169-478b-bcbf-88ceb560da43",
+      "name": "Herr Wenz",
+      "code": "WEN",
+      "subjects": [
+        "Russisch",
+        "Englisch"
+      ]
+    },
+    {
+      "id": "668e4c96-5d1e-4de4-b7a2-9b0853d3b970",
+      "name": "Herr Winkler",
+      "code": "WIN",
+      "subjects": [
+        "Biologie",
+        "Sport"
+      ]
+    },
+    {
+      "id": "05aa6d9e-46c7-4293-adc1-cbdcaeda83ed",
+      "name": "Herr Wohlfahrt",
+      "code": "WHL",
+      "subjects": [
+        "Biologie",
+        "Astronomie",
+        "Psychologie"
+      ]
+    }
+  ],
+  "pendingUploads": [],
+  "approvedUploads": []
+}
