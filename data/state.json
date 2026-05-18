@@ -362,6 +362,15 @@
         "Deutsch",
         "Ehtik"
       ]
+    },
+    {
+      "id": "8bd6c872-ee63-4ae9-b7d1-8722f4ffc434",
+      "name": "Frau Schulze",
+      "code": "ESC",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
     }
   ],
   "pendingUploads": [],
