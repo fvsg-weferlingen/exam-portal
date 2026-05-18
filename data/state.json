@@ -445,6 +445,15 @@
         "Russisch",
         "Englisch"
       ]
+    },
+    {
+      "id": "668e4c96-5d1e-4de4-b7a2-9b0853d3b970",
+      "name": "Herr Winkler",
+      "code": "WIN",
+      "subjects": [
+        "Biologie",
+        "Sport"
+      ]
     }
   ],
   "pendingUploads": [],
