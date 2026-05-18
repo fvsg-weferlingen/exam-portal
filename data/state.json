@@ -201,6 +201,14 @@
         "Wirtschaft",
         "Sport"
       ]
+    },
+    {
+      "id": "c3cb68d4-d54b-43f0-9159-b4315e66f1df",
+      "name": "Herr Karkili",
+      "code": "KAR",
+      "subjects": [
+        "Englisch"
+      ]
     }
   ],
   "pendingUploads": [],
