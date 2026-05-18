@@ -39,7 +39,7 @@
         <div>
           <p class="badge">Schnellzugriff</p>
           <h2>Lehrerkürzel auswählen</h2>
-          <p>Wähle erst den Lehrer, dann das Fach und danach die Klasse. Klassenarbeiten stehen immer ganz oben.</p>
+          <p>Wähle erst den Lehrer, dann das Fach und danach die Klasse. Danach öffnet sich eine übersichtliche Liste mit Klassenarbeiten und Tests.</p>
         </div>
         <button id="openUploadBtn" class="primary-btn">Upload für alle</button>
       </section>
@@ -75,7 +75,7 @@
           <h3>Arbeiten und Tests</h3>
           <p id="archiveHint">Bitte Lehrer, Fach und Klasse auswählen.</p>
         </div>
-        <div id="archiveList" class="card-list empty-state"></div>
+        <div id="archiveList" class="archive-groups empty-state"></div>
       </section>
     </section>
   </main>
@@ -110,12 +110,8 @@
           </select>
         </label>
         <label>
-          Datum
-          <input id="uploadDate" type="date" required>
-        </label>
-        <label>
           Jahr
-          <input id="uploadYear" type="number" min="2000" max="2099" placeholder="z. B. 2023" required>
+          <input id="uploadYear" type="number" min="2000" max="2099" placeholder="z. B. 2024" required>
         </label>
         <label class="full-width">
           Titel
@@ -178,22 +174,52 @@
           <h3>Uploads prüfen</h3>
           <p>Freigeben, bearbeiten oder löschen</p>
         </div>
+        <div class="admin-filter-grid">
+          <label>
+            Lehrer
+            <select id="adminTeacherFilter"></select>
+          </label>
+          <label>
+            Fach
+            <select id="adminSubjectFilter"></select>
+          </label>
+          <label>
+            Klasse
+            <select id="adminClassFilter"></select>
+          </label>
+        </div>
         <div id="pendingList" class="admin-list"></div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-head">
+          <h3>Freigegebene Inhalte</h3>
+          <p>Auch freigegebene Einträge können bearbeitet oder gelöscht werden</p>
+        </div>
+        <div id="approvedList" class="admin-list"></div>
       </section>
     </div>
   </div>
 
   <template id="archiveItemTemplate">
-    <article class="archive-card">
-      <div class="archive-topline">
-        <span class="pill"></span>
-        <span class="date-line"></span>
+    <details class="archive-entry">
+      <summary>
+        <div class="archive-summary-text">
+          <span class="pill"></span>
+          <h4></h4>
+          <p class="meta-line"></p>
+        </div>
+        <span class="summary-date"></span>
+      </summary>
+      <div class="archive-entry-body">
+        <p class="date-line"></p>
+        <p class="note-line hidden"></p>
+        <div class="preview-frame-wrap hidden">
+          <iframe class="preview-frame" title="Dateivorschau"></iframe>
+        </div>
+        <a class="secondary-btn" target="_blank" rel="noopener noreferrer">Datei in neuem Tab öffnen</a>
       </div>
-      <h4></h4>
-      <p class="meta-line"></p>
-      <p class="note-line hidden"></p>
-      <a class="secondary-btn" target="_blank" rel="noopener noreferrer">Datei öffnen</a>
-    </article>
+    </details>
   </template>
 
   <script src="script.js"></script>

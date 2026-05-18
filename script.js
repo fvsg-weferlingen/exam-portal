@@ -20,6 +20,9 @@ let state = loadState();
 let selectedTeacherId = null;
 let selectedSubject = null;
 let selectedClass = null;
+let adminTeacherFilter = "";
+let adminSubjectFilter = "";
+let adminClassFilter = "";
 
 const gateScreen = document.getElementById("gateScreen");
 const appScreen = document.getElementById("appScreen");
@@ -29,6 +32,7 @@ const teacherList = document.getElementById("teacherList");
 const subjectList = document.getElementById("subjectList");
 const classList = document.getElementById("classList");
 const archiveList = document.getElementById("archiveList");
+const archivePanel = document.querySelector(".archive-panel");
 const subjectHint = document.getElementById("subjectHint");
 const classHint = document.getElementById("classHint");
 const archiveHint = document.getElementById("archiveHint");
@@ -43,7 +47,11 @@ const uploadClass = document.getElementById("uploadClass");
 const uploadMessage = document.getElementById("uploadMessage");
 const teacherForm = document.getElementById("teacherForm");
 const adminTeacherList = document.getElementById("adminTeacherList");
+const adminTeacherFilterSelect = document.getElementById("adminTeacherFilter");
+const adminSubjectFilterSelect = document.getElementById("adminSubjectFilter");
+const adminClassFilterSelect = document.getElementById("adminClassFilter");
 const pendingList = document.getElementById("pendingList");
+const approvedList = document.getElementById("approvedList");
 const archiveItemTemplate = document.getElementById("archiveItemTemplate");
 
 gateForm.addEventListener("submit", handleSiteAccess);
@@ -55,6 +63,9 @@ openUploadBtn.addEventListener("click", () => {
 uploadTeacher.addEventListener("change", populateUploadSubjects);
 uploadForm.addEventListener("submit", handleUpload);
 teacherForm.addEventListener("submit", handleTeacherSave);
+adminTeacherFilterSelect.addEventListener("change", handleAdminTeacherFilterChange);
+adminSubjectFilterSelect.addEventListener("change", handleAdminSubjectFilterChange);
+adminClassFilterSelect.addEventListener("change", handleAdminClassFilterChange);
 
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -201,14 +212,21 @@ function renderClasses() {
   classHint.textContent = `${selectedSubject}`;
 
   CLASS_LEVELS.forEach((classLevel) => {
+    const hasEntries = hasApprovedEntriesForClass(classLevel);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "chip";
+    if (!hasEntries) {
+      button.classList.add("disabled");
+    }
     if (classLevel === selectedClass) {
       button.classList.add("active");
     }
-    button.innerHTML = `<strong>Klasse ${classLevel}</strong><span>Arbeiten ansehen</span>`;
+    button.innerHTML = `<strong>Klasse ${classLevel}</strong><span>${hasEntries ? "Arbeiten ansehen" : "Noch keine Inhalte"}</span>`;
     button.addEventListener("click", () => {
+      if (!hasEntries) {
+        return;
+      }
       selectedClass = classLevel;
       renderAll();
     });
@@ -220,10 +238,13 @@ function renderArchive() {
   archiveList.innerHTML = "";
 
   if (!selectedTeacherId || !selectedSubject || !selectedClass) {
+    archivePanel.classList.add("hidden-panel");
     archiveHint.textContent = "Bitte Lehrer, Fach und Klasse auswählen.";
     archiveList.textContent = "Hier erscheinen die freigegebenen Inhalte.";
     return;
   }
+
+  archivePanel.classList.remove("hidden-panel");
 
   const teacher = getSelectedTeacher();
   archiveHint.textContent = `${teacher.code} • ${selectedSubject} • Klasse ${selectedClass}`;
@@ -241,21 +262,48 @@ function renderArchive() {
     return;
   }
 
-  items.forEach((item) => {
-    const fragment = archiveItemTemplate.content.cloneNode(true);
-    fragment.querySelector(".pill").textContent = item.type;
-    fragment.querySelector(".date-line").textContent = formatDisplayDate(item.date);
-    fragment.querySelector("h4").textContent = item.title;
-    fragment.querySelector(".meta-line").textContent = `${teacher.name} • ${item.subject} • Klasse ${item.classLevel} • ${item.year}`;
-    const noteLine = fragment.querySelector(".note-line");
-    if (item.note) {
-      noteLine.textContent = item.note;
-      noteLine.classList.remove("hidden");
+  const groupedItems = {
+    Klassenarbeit: items.filter((item) => item.type === "Klassenarbeit"),
+    Test: items.filter((item) => item.type === "Test")
+  };
+
+  Object.entries(groupedItems).forEach(([type, entries]) => {
+    if (!entries.length) {
+      return;
     }
-    const link = fragment.querySelector("a");
-    link.href = item.fileDataUrl;
-    link.download = item.fileName;
-    archiveList.appendChild(fragment);
+    const group = document.createElement("section");
+    group.className = "archive-group";
+    group.innerHTML = `
+      <div class="archive-group-head">
+        <h4>${type}</h4>
+        <span class="badge">${entries.length} Einträge</span>
+      </div>
+    `;
+
+    entries.forEach((item) => {
+      const fragment = archiveItemTemplate.content.cloneNode(true);
+      fragment.querySelector(".pill").textContent = item.type;
+      fragment.querySelector(".summary-date").textContent = getShortDateLabel(item);
+      fragment.querySelector(".date-line").textContent = getLongDateLabel(item);
+      fragment.querySelector("h4").textContent = item.title;
+      fragment.querySelector(".meta-line").textContent = `${teacher.name} • ${item.subject} • Klasse ${item.classLevel} • Jahr ${item.year}`;
+      const noteLine = fragment.querySelector(".note-line");
+      if (item.note) {
+        noteLine.textContent = item.note;
+        noteLine.classList.remove("hidden");
+      }
+      const previewWrap = fragment.querySelector(".preview-frame-wrap");
+      const previewFrame = fragment.querySelector(".preview-frame");
+      if (isPreviewableFile(item.fileName, item.fileDataUrl)) {
+        previewFrame.src = item.fileDataUrl;
+        previewWrap.classList.remove("hidden");
+      }
+      const link = fragment.querySelector("a");
+      link.href = item.fileDataUrl;
+      group.appendChild(fragment);
+    });
+
+    archiveList.appendChild(group);
   });
 }
 
@@ -309,7 +357,6 @@ async function handleUpload(event) {
     subject: uploadSubject.value,
     classLevel: uploadClass.value,
     type: document.getElementById("uploadType").value,
-    date: document.getElementById("uploadDate").value,
     year: document.getElementById("uploadYear").value.trim(),
     title: document.getElementById("uploadTitle").value.trim(),
     note: document.getElementById("uploadNote").value.trim(),
@@ -368,8 +415,58 @@ function handleTeacherSave(event) {
 }
 
 function renderAdmin() {
+  renderAdminFilters();
   renderAdminTeachers();
   renderPendingUploads();
+  renderApprovedUploads();
+}
+
+function renderAdminFilters() {
+  adminTeacherFilterSelect.innerHTML = "";
+  adminSubjectFilterSelect.innerHTML = "";
+  adminClassFilterSelect.innerHTML = "";
+
+  const teacherOptions = [`<option value="">Lehrer auswählen</option>`].concat(
+    state.teachers
+      .sort((a, b) => a.code.localeCompare(b.code, "de"))
+      .map((teacher) => `<option value="${teacher.id}">${escapeHtml(teacher.name)} (${escapeHtml(teacher.code)})</option>`)
+  );
+  adminTeacherFilterSelect.innerHTML = teacherOptions.join("");
+  adminTeacherFilterSelect.value = adminTeacherFilter;
+
+  const selectedTeacher = state.teachers.find((teacher) => teacher.id === adminTeacherFilter);
+  const subjectOptions = [`<option value="">Fach auswählen</option>`];
+  if (selectedTeacher) {
+    selectedTeacher.subjects.forEach((subject) => {
+      subjectOptions.push(`<option value="${escapeAttribute(subject)}">${escapeHtml(subject)}</option>`);
+    });
+  }
+  adminSubjectFilterSelect.innerHTML = subjectOptions.join("");
+  adminSubjectFilterSelect.value = adminSubjectFilter;
+
+  const classOptions = [`<option value="">Klasse auswählen</option>`].concat(
+    CLASS_LEVELS.map((level) => `<option value="${level}">${level}</option>`)
+  );
+  adminClassFilterSelect.innerHTML = classOptions.join("");
+  adminClassFilterSelect.value = adminClassFilter;
+}
+
+function handleAdminTeacherFilterChange() {
+  adminTeacherFilter = adminTeacherFilterSelect.value;
+  adminSubjectFilter = "";
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminSubjectFilterChange() {
+  adminSubjectFilter = adminSubjectFilterSelect.value;
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminClassFilterChange() {
+  adminClassFilter = adminClassFilterSelect.value;
+  renderAdmin();
 }
 
 function renderAdminTeachers() {
@@ -418,6 +515,11 @@ function renderAdminTeachers() {
         window.alert("Dieser Lehrer wird noch in Uploads verwendet und kann deshalb nicht gelöscht werden.");
         return;
       }
+      const teacher = state.teachers.find((entry) => entry.id === teacherId);
+      const confirmed = window.confirm(`Soll ${teacher?.name ?? "dieser Lehrer"} wirklich gelöscht werden?`);
+      if (!confirmed) {
+        return;
+      }
       state.teachers = state.teachers.filter((teacher) => teacher.id !== teacherId);
       if (selectedTeacherId === teacherId) {
         selectedTeacherId = null;
@@ -434,12 +536,23 @@ function renderAdminTeachers() {
 function renderPendingUploads() {
   pendingList.innerHTML = "";
 
-  if (!state.pendingUploads.length) {
+  if (!adminTeacherFilter || !adminSubjectFilter || !adminClassFilter) {
+    pendingList.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
+    return;
+  }
+
+  const filteredPendingUploads = state.pendingUploads.filter((item) => (
+    item.teacherId === adminTeacherFilter &&
+    item.subject === adminSubjectFilter &&
+    item.classLevel === adminClassFilter
+  ));
+
+  if (!filteredPendingUploads.length) {
     pendingList.textContent = "Zurzeit warten keine Uploads auf Prüfung.";
     return;
   }
 
-  state.pendingUploads
+  filteredPendingUploads
     .sort(sortUploads)
     .forEach((item) => {
       const teacher = state.teachers.find((entry) => entry.id === item.teacherId);
@@ -448,10 +561,9 @@ function renderPendingUploads() {
       wrapper.innerHTML = `
         <h4>${escapeHtml(item.title)}</h4>
         <p class="meta-line">${escapeHtml(teacher ? `${teacher.name} (${teacher.code})` : "Unbekannter Lehrer")} • ${escapeHtml(item.subject)} • Klasse ${escapeHtml(item.classLevel)} • ${escapeHtml(item.type)}</p>
-        <p class="meta-line">Geschrieben am ${formatDisplayDate(item.date)} • Jahr ${escapeHtml(item.year)} • Datei: ${escapeHtml(item.fileName)}</p>
+        <p class="meta-line">${escapeHtml(getLongDateLabel(item))} • Datei: ${escapeHtml(item.fileName)}</p>
         <div class="inline-fields">
           <input type="text" value="${escapeAttribute(item.title)}" data-field="title" data-id="${item.id}">
-          <input type="date" value="${escapeAttribute(item.date)}" data-field="date" data-id="${item.id}">
           <input type="number" value="${escapeAttribute(item.year)}" data-field="year" data-id="${item.id}">
           <input type="text" value="${escapeAttribute(item.classLevel)}" data-field="classLevel" data-id="${item.id}">
           <select data-field="type" data-id="${item.id}">
@@ -503,8 +615,105 @@ function approveUpload(uploadId) {
 }
 
 function rejectUpload(uploadId) {
+  const confirmed = window.confirm("Soll dieser Upload wirklich gelöscht werden?");
+  if (!confirmed) {
+    return;
+  }
   state.pendingUploads = state.pendingUploads.filter((entry) => entry.id !== uploadId);
   saveState();
+  renderAdmin();
+}
+
+function renderApprovedUploads() {
+  approvedList.innerHTML = "";
+
+  if (!adminTeacherFilter || !adminSubjectFilter || !adminClassFilter) {
+    approvedList.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
+    return;
+  }
+
+  const filteredApprovedUploads = state.approvedUploads.filter((item) => (
+    item.teacherId === adminTeacherFilter &&
+    item.subject === adminSubjectFilter &&
+    item.classLevel === adminClassFilter
+  ));
+
+  if (!filteredApprovedUploads.length) {
+    approvedList.textContent = "Noch keine freigegebenen Inhalte vorhanden.";
+    return;
+  }
+
+  filteredApprovedUploads
+    .sort(sortUploads)
+    .forEach((item) => {
+      const teacher = state.teachers.find((entry) => entry.id === item.teacherId);
+      const wrapper = document.createElement("article");
+      wrapper.className = "admin-item";
+      wrapper.innerHTML = `
+        <h4>${escapeHtml(item.title)}</h4>
+        <p class="meta-line">${escapeHtml(teacher ? `${teacher.name} (${teacher.code})` : "Unbekannter Lehrer")} • ${escapeHtml(item.subject)} • Klasse ${escapeHtml(item.classLevel)} • ${escapeHtml(item.type)}</p>
+        <p class="meta-line">${escapeHtml(getLongDateLabel(item))} • Datei: ${escapeHtml(item.fileName)}</p>
+        <div class="inline-fields">
+          <input type="text" value="${escapeAttribute(item.title)}" data-approved-field="title" data-id="${item.id}">
+          <input type="number" value="${escapeAttribute(item.year)}" data-approved-field="year" data-id="${item.id}">
+          <input type="text" value="${escapeAttribute(item.classLevel)}" data-approved-field="classLevel" data-id="${item.id}">
+          <select data-approved-field="type" data-id="${item.id}">
+            <option value="Klassenarbeit" ${item.type === "Klassenarbeit" ? "selected" : ""}>Klassenarbeit</option>
+            <option value="Test" ${item.type === "Test" ? "selected" : ""}>Test</option>
+          </select>
+          <input type="text" value="${escapeAttribute(item.subject)}" data-approved-field="subject" data-id="${item.id}">
+          <textarea rows="2" data-approved-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
+        </div>
+        <div class="admin-actions">
+          <a class="secondary-btn" href="${item.fileDataUrl}" download="${escapeAttribute(item.fileName)}">Datei öffnen</a>
+          <button type="button" class="ghost-btn" data-unapprove="${item.id}">Zur Prüfung zurück</button>
+          <button type="button" class="ghost-btn" data-delete-approved="${item.id}">Löschen</button>
+        </div>
+      `;
+      approvedList.appendChild(wrapper);
+    });
+
+  approvedList.querySelectorAll("[data-approved-field]").forEach((field) => {
+    field.addEventListener("change", () => {
+      const item = state.approvedUploads.find((entry) => entry.id === field.dataset.id);
+      if (!item) {
+        return;
+      }
+      item[field.dataset.approvedField] = field.value.trim();
+      saveState();
+      renderAll();
+    });
+  });
+
+  approvedList.querySelectorAll("[data-unapprove]").forEach((button) => {
+    button.addEventListener("click", () => moveBackToPending(button.dataset.unapprove));
+  });
+
+  approvedList.querySelectorAll("[data-delete-approved]").forEach((button) => {
+    button.addEventListener("click", () => deleteApprovedUpload(button.dataset.deleteApproved));
+  });
+}
+
+function moveBackToPending(uploadId) {
+  const item = state.approvedUploads.find((entry) => entry.id === uploadId);
+  if (!item) {
+    return;
+  }
+  state.approvedUploads = state.approvedUploads.filter((entry) => entry.id !== uploadId);
+  state.pendingUploads.push(item);
+  saveState();
+  renderAll();
+  renderAdmin();
+}
+
+function deleteApprovedUpload(uploadId) {
+  const confirmed = window.confirm("Soll dieser freigegebene Eintrag wirklich gelöscht werden?");
+  if (!confirmed) {
+    return;
+  }
+  state.approvedUploads = state.approvedUploads.filter((entry) => entry.id !== uploadId);
+  saveState();
+  renderAll();
   renderAdmin();
 }
 
@@ -512,7 +721,7 @@ function sortUploads(a, b) {
   if (a.type !== b.type) {
     return a.type === "Klassenarbeit" ? -1 : 1;
   }
-  return new Date(b.date) - new Date(a.date);
+  return getSortableTimestamp(b) - getSortableTimestamp(a);
 }
 
 function openModal(modal) {
@@ -540,13 +749,40 @@ function readFileAsDataUrl(file) {
 
 function formatDisplayDate(dateValue) {
   if (!dateValue) {
-    return "Kein Datum";
+    return "";
   }
   return new Intl.DateTimeFormat("de-DE", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric"
   }).format(new Date(dateValue));
+}
+
+function getSortableTimestamp(item) {
+  const year = Number(item.year);
+  return Number.isNaN(year) ? 0 : new Date(`${year}-12-31`).getTime();
+}
+
+function getShortDateLabel(item) {
+  return `Jahr ${item.year}`;
+}
+
+function getLongDateLabel(item) {
+  return `Geschrieben im Jahr ${item.year}`;
+}
+
+function hasApprovedEntriesForClass(classLevel) {
+  return state.approvedUploads.some((item) => (
+    item.teacherId === selectedTeacherId &&
+    item.subject === selectedSubject &&
+    item.classLevel === classLevel
+  ));
+}
+
+function isPreviewableFile(fileName, dataUrl) {
+  const lowerName = String(fileName ?? "").toLowerCase();
+  return dataUrl.startsWith("data:application/pdf") ||
+    [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".txt", ".html"].some((ending) => lowerName.endsWith(ending));
 }
 
 function escapeHtml(value) {
