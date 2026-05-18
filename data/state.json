@@ -27,6 +27,15 @@
         "Deutsch",
         "Russisch"
       ]
+    },
+    {
+      "id": "572a2a92-22ec-44bf-a78c-718e3ed9a982",
+      "name": "Herr Arend",
+      "code": "ARE",
+      "subjects": [
+        "Mathematik",
+        "Sport"
+      ]
     }
   ],
   "pendingUploads": [],
