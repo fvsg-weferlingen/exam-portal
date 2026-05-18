@@ -426,6 +426,16 @@
         "Englisch",
         "Sozialkunde"
       ]
+    },
+    {
+      "id": "fc1de7b7-fd29-4734-92da-5043b2d7418b",
+      "name": "Frau Wanke",
+      "code": "WAN",
+      "subjects": [
+        "Deutsch",
+        "Englisch",
+        "Russisch"
+      ]
     }
   ],
   "pendingUploads": [],
