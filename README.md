@@ -1,6 +1,8 @@
-# Schularchiv
+# exam-portal
 
-Diese kleine Web-App ist komplett lokal und besteht nur aus:
+Auf dieser Plattform können Schüler Klassenarbeiten, Tests und Prüfungen hochladen und für andere Schüler zur Verfügung stellen.
+
+## Projektdateien
 
 - `index.html`
 - `style.css`
@@ -17,10 +19,12 @@ Diese kleine Web-App ist komplett lokal und besteht nur aus:
 - Adminverwaltung oben rechts mit Passwort `2702`
 - Lehrer mit Kürzel und Fächern in der Adminzentrale verwalten
 - Lehrer auswählen, dann Fach, dann Klasse `5` bis `12`
-- Uploads mit Lehrer, Fach, Jahr, Datum, Klasse und Datei
+- Uploads mit Lehrer, Fach, Jahr, Klasse und Datei
 - Neue Uploads werden zuerst geprüft und erst danach freigegeben
 - Klassenarbeiten stehen vor Tests
-- Innerhalb der Listen wird nach dem neuesten Datum sortiert
+- Inhalte erscheinen erst nach Auswahl von Lehrer, Fach und Klasse
+- Klassen ohne Inhalte sind rot markiert
+- Unterstützte Dateien können direkt auf der Website als Vorschau angezeigt werden
 
 ## Wichtig
 
