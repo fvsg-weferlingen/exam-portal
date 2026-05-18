@@ -20,8 +20,7 @@ Die Website speichert Daten jetzt ueber eine Server-API direkt in GitHub:
 
 ## Funktionen
 
-- Zugang ueber Passwort `1208`
-- Adminverwaltung oben rechts mit Passwort `2702`
+- Geschuetzter Zugang fuer Nutzer und Adminbereich
 - Lehrer mit Kuerzel und Faechern in der Adminzentrale verwalten
 - Lehrer auswaehlen, dann Fach, dann Klasse `5` bis `12`
 - Uploads mit Lehrer, Fach, Jahr, Klasse und Datei

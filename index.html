@@ -38,44 +38,72 @@
       <section class="hero-panel">
         <div>
           <p class="badge">Schnellzugriff</p>
-          <h2>Lehrerkürzel auswählen</h2>
-          <p>Wähle erst den Lehrer, dann das Fach und danach die Klasse. Danach öffnet sich eine übersichtliche Liste mit Klassenarbeiten und Tests.</p>
+          <h2>Lehrer schnell finden</h2>
+          <p>Suche nach einem Lehrer, wähle danach Fach und Klasse und öffne dann direkt den passenden Titel mit Vorschau.</p>
         </div>
         <button id="openUploadBtn" class="primary-btn">Upload für alle</button>
       </section>
 
-      <section class="content-grid">
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Lehrer</h3>
-            <p>Alle sichtbaren Kürzel</p>
-          </div>
-          <div id="teacherList" class="chip-grid"></div>
+      <section class="panel selector-panel">
+        <div class="panel-head">
+          <h3>Auswahl</h3>
+          <p id="archiveHint">Bitte nacheinander Lehrer, Fach und Klasse auswählen.</p>
         </div>
 
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Fächer</h3>
-            <p id="subjectHint">Bitte zuerst einen Lehrer auswählen.</p>
-          </div>
-          <div id="subjectList" class="chip-grid empty-state"></div>
-        </div>
+        <div class="selector-grid">
+          <label class="full-width">
+            Lehrer suchen
+            <input id="teacherSearch" type="text" placeholder="Nach Name oder Kürzel suchen">
+          </label>
 
-        <div class="panel">
-          <div class="panel-head">
-            <h3>Klassen</h3>
-            <p id="classHint">Bitte zuerst ein Fach auswählen.</p>
-          </div>
-          <div id="classList" class="chip-grid empty-state"></div>
+          <label class="full-width">
+            Lehrer
+            <select id="teacherSelect">
+              <option value="">Lehrer auswählen</option>
+            </select>
+          </label>
+
+          <label id="subjectWrap" class="full-width hidden">
+            Fach
+            <select id="subjectSelect">
+              <option value="">Fach auswählen</option>
+            </select>
+          </label>
+
+          <label id="classWrap" class="full-width hidden">
+            Klasse
+            <select id="classSelect">
+              <option value="">Klasse auswählen</option>
+            </select>
+          </label>
         </div>
       </section>
 
       <section class="panel archive-panel">
         <div class="panel-head">
-          <h3>Arbeiten und Tests</h3>
-          <p id="archiveHint">Bitte Lehrer, Fach und Klasse auswählen.</p>
+          <h3>Titel und Vorschau</h3>
+          <p id="previewHint">Bitte zuerst einen Titel auswählen.</p>
         </div>
-        <div id="archiveList" class="archive-groups empty-state"></div>
+
+        <div id="entryList" class="entry-list empty-state"></div>
+
+        <div id="previewPanel" class="preview-panel hidden">
+          <div class="preview-head">
+            <div>
+              <span id="previewType" class="pill"></span>
+              <h4 id="previewTitle"></h4>
+              <p id="previewMeta" class="meta-line"></p>
+            </div>
+          </div>
+          <p id="previewNote" class="note-line hidden"></p>
+          <div id="previewImageWrap" class="image-preview-wrap hidden">
+            <img id="previewImage" class="image-preview" alt="Vorschau">
+          </div>
+          <div id="previewFrameWrap" class="preview-frame-wrap hidden">
+            <iframe id="previewFrame" class="preview-frame" title="Dateivorschau"></iframe>
+          </div>
+          <p id="previewFallback" class="message hidden">Für diesen Dateityp ist keine direkte Vorschau verfügbar.</p>
+        </div>
       </section>
     </section>
   </main>
@@ -202,24 +230,14 @@
   </div>
 
   <template id="archiveItemTemplate">
-    <details class="archive-entry">
-      <summary>
-        <div class="archive-summary-text">
-          <span class="pill"></span>
-          <h4></h4>
-          <p class="meta-line"></p>
-        </div>
-        <span class="summary-date"></span>
-      </summary>
-      <div class="archive-entry-body">
-        <p class="date-line"></p>
-        <p class="note-line hidden"></p>
-        <div class="preview-frame-wrap hidden">
-          <iframe class="preview-frame" title="Dateivorschau"></iframe>
-        </div>
-        <a class="secondary-btn" target="_blank" rel="noopener noreferrer">Datei in neuem Tab öffnen</a>
-      </div>
-    </details>
+    <button type="button" class="entry-button">
+      <span class="pill"></span>
+      <span class="entry-text">
+        <strong></strong>
+        <span class="meta-line"></span>
+      </span>
+      <span class="summary-date"></span>
+    </button>
   </template>
 
   <script src="script.js"></script>

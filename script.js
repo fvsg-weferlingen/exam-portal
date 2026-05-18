@@ -11,6 +11,8 @@ let state = structuredClone(EMPTY_STATE);
 let selectedTeacherId = null;
 let selectedSubject = null;
 let selectedClass = null;
+let selectedEntryId = null;
+let teacherSearchTerm = "";
 let adminTeacherFilter = "";
 let adminSubjectFilter = "";
 let adminClassFilter = "";
@@ -21,14 +23,26 @@ const gateScreen = document.getElementById("gateScreen");
 const appScreen = document.getElementById("appScreen");
 const gateForm = document.getElementById("gateForm");
 const gateMessage = document.getElementById("gateMessage");
-const teacherList = document.getElementById("teacherList");
-const subjectList = document.getElementById("subjectList");
-const classList = document.getElementById("classList");
-const archiveList = document.getElementById("archiveList");
+const teacherSearch = document.getElementById("teacherSearch");
+const teacherSelect = document.getElementById("teacherSelect");
+const subjectWrap = document.getElementById("subjectWrap");
+const classWrap = document.getElementById("classWrap");
+const subjectSelect = document.getElementById("subjectSelect");
+const classSelect = document.getElementById("classSelect");
 const archivePanel = document.querySelector(".archive-panel");
-const subjectHint = document.getElementById("subjectHint");
-const classHint = document.getElementById("classHint");
 const archiveHint = document.getElementById("archiveHint");
+const previewHint = document.getElementById("previewHint");
+const entryList = document.getElementById("entryList");
+const previewPanel = document.getElementById("previewPanel");
+const previewType = document.getElementById("previewType");
+const previewTitle = document.getElementById("previewTitle");
+const previewMeta = document.getElementById("previewMeta");
+const previewNote = document.getElementById("previewNote");
+const previewImageWrap = document.getElementById("previewImageWrap");
+const previewImage = document.getElementById("previewImage");
+const previewFrameWrap = document.getElementById("previewFrameWrap");
+const previewFrame = document.getElementById("previewFrame");
+const previewFallback = document.getElementById("previewFallback");
 const adminAccessBtn = document.getElementById("adminAccessBtn");
 const uploadModal = document.getElementById("uploadModal");
 const adminModal = document.getElementById("adminModal");
@@ -54,6 +68,10 @@ openUploadBtn.addEventListener("click", () => {
   uploadMessage.textContent = "";
   openModal(uploadModal);
 });
+teacherSearch.addEventListener("input", handleTeacherSearch);
+teacherSelect.addEventListener("change", handleTeacherSelection);
+subjectSelect.addEventListener("change", handleSubjectSelection);
+classSelect.addEventListener("change", handleClassSelection);
 uploadTeacher.addEventListener("change", populateUploadSubjects);
 uploadForm.addEventListener("submit", handleUpload);
 teacherForm.addEventListener("submit", handleTeacherSave);
@@ -63,8 +81,7 @@ adminClassFilterSelect.addEventListener("change", handleAdminClassFilterChange);
 
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
-    const modal = document.getElementById(button.dataset.close);
-    closeModal(modal);
+    closeModal(document.getElementById(button.dataset.close));
   });
 });
 
@@ -140,16 +157,23 @@ function sanitizeSelections() {
     selectedTeacherId = null;
     selectedSubject = null;
     selectedClass = null;
+    selectedEntryId = null;
   }
 
   const selectedTeacher = getSelectedTeacher();
   if (selectedTeacher && !selectedTeacher.subjects.includes(selectedSubject)) {
     selectedSubject = null;
     selectedClass = null;
+    selectedEntryId = null;
   }
 
   if (selectedClass && !hasApprovedEntriesForClass(selectedClass)) {
     selectedClass = null;
+    selectedEntryId = null;
+  }
+
+  if (selectedEntryId && !getVisibleEntries().some((item) => item.id === selectedEntryId)) {
+    selectedEntryId = null;
   }
 
   if (!state.teachers.some((teacher) => teacher.id === adminTeacherFilter)) {
@@ -163,16 +187,10 @@ function sanitizeSelections() {
     adminSubjectFilter = "";
     adminClassFilter = "";
   }
-
-  if (adminClassFilter && !CLASS_LEVELS.includes(adminClassFilter)) {
-    adminClassFilter = "";
-  }
 }
 
 function renderAll() {
-  renderTeachers();
-  renderSubjects();
-  renderClasses();
+  renderSelectionFlow();
   renderArchive();
   populateUploadTeachers();
   if (!adminModal.classList.contains("hidden")) {
@@ -180,194 +198,157 @@ function renderAll() {
   }
 }
 
-function renderTeachers() {
-  teacherList.innerHTML = "";
+function renderSelectionFlow() {
+  teacherSelect.innerHTML = '<option value="">Lehrer auswählen</option>';
+  const teachers = getFilteredTeachers();
 
   if (isLoadingState) {
-    teacherList.textContent = "Daten werden geladen...";
+    archiveHint.textContent = "Daten werden geladen...";
     return;
   }
 
   if (loadError) {
-    teacherList.textContent = loadError;
+    archiveHint.textContent = loadError;
     return;
   }
 
-  if (!state.teachers.length) {
-    teacherList.textContent = "Noch keine Lehrer angelegt.";
-    return;
-  }
+  teachers.forEach((teacher) => {
+    const option = document.createElement("option");
+    option.value = teacher.id;
+    option.textContent = `${teacher.name} (${teacher.code})`;
+    teacherSelect.appendChild(option);
+  });
+  teacherSelect.value = selectedTeacherId ?? "";
 
-  state.teachers
-    .slice()
-    .sort((a, b) => a.code.localeCompare(b.code, "de"))
-    .forEach((teacher) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "chip";
-      if (teacher.id === selectedTeacherId) {
-        button.classList.add("active");
-      }
-      button.innerHTML = `<strong>${escapeHtml(teacher.code)}</strong><span>${escapeHtml(teacher.name)}</span>`;
-      button.addEventListener("click", () => {
-        selectedTeacherId = teacher.id;
-        selectedSubject = null;
-        selectedClass = null;
-        renderAll();
-      });
-      teacherList.appendChild(button);
-    });
-}
-
-function renderSubjects() {
-  subjectList.innerHTML = "";
   const teacher = getSelectedTeacher();
+  subjectWrap.classList.toggle("hidden", !teacher);
+  classWrap.classList.toggle("hidden", !selectedSubject);
 
-  if (isLoadingState) {
-    subjectHint.textContent = "Daten werden geladen...";
-    subjectList.textContent = "Bitte warten.";
-    return;
-  }
+  renderSubjectSelect(teacher);
+  renderClassSelect();
 
   if (!teacher) {
-    subjectHint.textContent = "Bitte zuerst einen Lehrer auswählen.";
-    subjectList.textContent = "Keine Fächer sichtbar.";
-    return;
+    archiveHint.textContent = teachers.length ? "Bitte zuerst einen Lehrer auswählen." : "Keine Lehrer gefunden.";
+  } else if (!selectedSubject) {
+    archiveHint.textContent = `${teacher.name} ausgewählt. Bitte jetzt ein Fach auswählen.`;
+  } else if (!selectedClass) {
+    archiveHint.textContent = `${teacher.name} • ${selectedSubject}. Bitte jetzt eine Klasse auswählen.`;
+  } else {
+    archiveHint.textContent = `${teacher.name} • ${selectedSubject} • Klasse ${selectedClass}`;
   }
-
-  subjectHint.textContent = `${teacher.name} (${teacher.code})`;
-
-  teacher.subjects.forEach((subject) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "chip";
-    if (subject === selectedSubject) {
-      button.classList.add("active");
-    }
-    button.innerHTML = `<strong>${escapeHtml(subject)}</strong><span>Fach öffnen</span>`;
-    button.addEventListener("click", () => {
-      selectedSubject = subject;
-      selectedClass = null;
-      renderAll();
-    });
-    subjectList.appendChild(button);
-  });
 }
 
-function renderClasses() {
-  classList.innerHTML = "";
-
-  if (isLoadingState) {
-    classHint.textContent = "Daten werden geladen...";
-    classList.textContent = "Bitte warten.";
+function renderSubjectSelect(teacher) {
+  subjectSelect.innerHTML = '<option value="">Fach auswählen</option>';
+  if (!teacher) {
     return;
   }
 
+  teacher.subjects.forEach((subject) => {
+    const option = document.createElement("option");
+    option.value = subject;
+    option.textContent = subject;
+    subjectSelect.appendChild(option);
+  });
+  subjectSelect.value = selectedSubject ?? "";
+}
+
+function renderClassSelect() {
+  classSelect.innerHTML = '<option value="">Klasse auswählen</option>';
   if (!selectedSubject) {
-    classHint.textContent = "Bitte zuerst ein Fach auswählen.";
-    classList.textContent = "Noch keine Klasse ausgewählt.";
     return;
   }
-
-  classHint.textContent = `${selectedSubject}`;
 
   CLASS_LEVELS.forEach((classLevel) => {
+    const option = document.createElement("option");
     const hasEntries = hasApprovedEntriesForClass(classLevel);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "chip";
-    if (!hasEntries) {
-      button.classList.add("disabled");
-    }
-    if (classLevel === selectedClass) {
-      button.classList.add("active");
-    }
-    button.innerHTML = `<strong>Klasse ${classLevel}</strong><span>${hasEntries ? "Arbeiten ansehen" : "Noch keine Inhalte"}</span>`;
-    button.addEventListener("click", () => {
-      if (!hasEntries) {
-        return;
-      }
-      selectedClass = classLevel;
-      renderAll();
-    });
-    classList.appendChild(button);
+    option.value = classLevel;
+    option.textContent = hasEntries ? classLevel : `${classLevel} - keine Inhalte`;
+    option.disabled = !hasEntries;
+    classSelect.appendChild(option);
   });
+  classSelect.value = selectedClass ?? "";
 }
 
 function renderArchive() {
-  archiveList.innerHTML = "";
+  entryList.innerHTML = "";
+  previewPanel.classList.add("hidden");
+  previewImageWrap.classList.add("hidden");
+  previewFrameWrap.classList.add("hidden");
+  previewFallback.classList.add("hidden");
+  previewNote.classList.add("hidden");
+  previewImage.removeAttribute("src");
+  previewFrame.removeAttribute("src");
 
   if (!selectedTeacherId || !selectedSubject || !selectedClass) {
     archivePanel.classList.add("hidden-panel");
-    archiveHint.textContent = "Bitte Lehrer, Fach und Klasse auswählen.";
-    archiveList.textContent = "Hier erscheinen die freigegebenen Inhalte.";
+    previewHint.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
+    entryList.textContent = "Hier erscheinen danach die Titel.";
     return;
   }
 
   archivePanel.classList.remove("hidden-panel");
+  const items = getVisibleEntries();
   const teacher = getSelectedTeacher();
-  archiveHint.textContent = `${teacher.code} • ${selectedSubject} • Klasse ${selectedClass}`;
-
-  const items = state.approvedUploads
-    .filter((item) => (
-      item.teacherId === selectedTeacherId &&
-      item.subject === selectedSubject &&
-      item.classLevel === selectedClass
-    ))
-    .sort(sortUploads);
 
   if (!items.length) {
-    archiveList.textContent = "Für diese Auswahl gibt es noch keine freigegebenen Arbeiten.";
+    previewHint.textContent = "Für diese Auswahl gibt es noch keine freigegebenen Arbeiten.";
+    entryList.textContent = "Keine Titel vorhanden.";
     return;
   }
 
-  const groupedItems = {
-    Klassenarbeit: items.filter((item) => item.type === "Klassenarbeit"),
-    Test: items.filter((item) => item.type === "Test")
-  };
-
-  Object.entries(groupedItems).forEach(([type, entries]) => {
-    if (!entries.length) {
-      return;
+  items.forEach((item) => {
+    const fragment = archiveItemTemplate.content.cloneNode(true);
+    const button = fragment.querySelector(".entry-button");
+    fragment.querySelector(".pill").textContent = item.type;
+    fragment.querySelector("strong").textContent = item.title;
+    fragment.querySelector(".meta-line").textContent = `${teacher.code} • Jahr ${item.year}`;
+    fragment.querySelector(".summary-date").textContent = getShortDateLabel(item);
+    if (item.id === selectedEntryId) {
+      button.classList.add("active");
     }
-
-    const group = document.createElement("section");
-    group.className = "archive-group";
-    group.innerHTML = `
-      <div class="archive-group-head">
-        <h4>${escapeHtml(type)}</h4>
-        <span class="badge">${entries.length} Einträge</span>
-      </div>
-    `;
-
-    entries.forEach((item) => {
-      const fragment = archiveItemTemplate.content.cloneNode(true);
-      fragment.querySelector(".pill").textContent = item.type;
-      fragment.querySelector(".summary-date").textContent = getShortDateLabel(item);
-      fragment.querySelector(".date-line").textContent = getLongDateLabel(item);
-      fragment.querySelector("h4").textContent = item.title;
-      fragment.querySelector(".meta-line").textContent = `${teacher.name} • ${item.subject} • Klasse ${item.classLevel} • Jahr ${item.year}`;
-
-      const noteLine = fragment.querySelector(".note-line");
-      if (item.note) {
-        noteLine.textContent = item.note;
-        noteLine.classList.remove("hidden");
-      }
-
-      const previewWrap = fragment.querySelector(".preview-frame-wrap");
-      const previewFrame = fragment.querySelector(".preview-frame");
-      if (isPreviewableFile(item.fileName, item.previewUrl)) {
-        previewFrame.src = item.previewUrl;
-        previewWrap.classList.remove("hidden");
-      }
-
-      const link = fragment.querySelector("a");
-      link.href = item.previewUrl;
-      group.appendChild(fragment);
+    button.addEventListener("click", () => {
+      selectedEntryId = item.id;
+      renderArchive();
     });
-
-    archiveList.appendChild(group);
+    entryList.appendChild(fragment);
   });
+
+  const selectedEntry = items.find((item) => item.id === selectedEntryId);
+  if (!selectedEntry) {
+    previewHint.textContent = "Bitte jetzt einen Titel auswählen.";
+    return;
+  }
+
+  renderPreview(selectedEntry, teacher);
+}
+
+function renderPreview(item, teacher) {
+  previewPanel.classList.remove("hidden");
+  previewHint.textContent = item.title;
+  previewType.textContent = item.type;
+  previewTitle.textContent = item.title;
+  previewMeta.textContent = `${teacher.name} • ${item.subject} • Klasse ${item.classLevel} • Jahr ${item.year}`;
+
+  if (item.note) {
+    previewNote.textContent = item.note;
+    previewNote.classList.remove("hidden");
+  }
+
+  if (isImageFile(item.fileName)) {
+    previewImage.src = item.previewUrl;
+    previewImage.alt = item.title;
+    previewImageWrap.classList.remove("hidden");
+    return;
+  }
+
+  if (isFramePreviewableFile(item.fileName, item.previewUrl)) {
+    previewFrame.src = item.previewUrl;
+    previewFrameWrap.classList.remove("hidden");
+    return;
+  }
+
+  previewFallback.classList.remove("hidden");
 }
 
 function populateUploadTeachers() {
@@ -410,9 +391,9 @@ function populateUploadSubjects() {
 
 async function handleUpload(event) {
   event.preventDefault();
-
   const fileInput = document.getElementById("uploadFile");
   const file = fileInput.files[0];
+
   if (!file) {
     uploadMessage.textContent = "Bitte eine Datei auswählen.";
     return;
@@ -447,7 +428,6 @@ async function handleUpload(event) {
 
 async function handleTeacherSave(event) {
   event.preventDefault();
-
   const teacherId = document.getElementById("teacherEditId").value.trim();
   const name = document.getElementById("teacherName").value.trim();
   const code = document.getElementById("teacherCode").value.trim().toUpperCase();
@@ -461,13 +441,7 @@ async function handleTeacherSave(event) {
   }
 
   try {
-    const response = await postAction("saveTeacher", {
-      teacherId,
-      name,
-      code,
-      subjects
-    });
-
+    const response = await postAction("saveTeacher", { teacherId, name, code, subjects });
     state = normalizeState(response.state);
     sanitizeSelections();
     teacherForm.reset();
@@ -491,7 +465,7 @@ function renderAdminFilters() {
   adminSubjectFilterSelect.innerHTML = "";
   adminClassFilterSelect.innerHTML = "";
 
-  const teacherOptions = [`<option value="">Lehrer auswählen</option>`].concat(
+  const teacherOptions = ['<option value="">Lehrer auswählen</option>'].concat(
     state.teachers
       .slice()
       .sort((a, b) => a.code.localeCompare(b.code, "de"))
@@ -501,7 +475,7 @@ function renderAdminFilters() {
   adminTeacherFilterSelect.value = adminTeacherFilter;
 
   const teacher = state.teachers.find((entry) => entry.id === adminTeacherFilter);
-  const subjectOptions = [`<option value="">Fach auswählen</option>`];
+  const subjectOptions = ['<option value="">Fach auswählen</option>'];
   if (teacher) {
     teacher.subjects.forEach((subject) => {
       subjectOptions.push(`<option value="${escapeAttribute(subject)}">${escapeHtml(subject)}</option>`);
@@ -510,7 +484,7 @@ function renderAdminFilters() {
   adminSubjectFilterSelect.innerHTML = subjectOptions.join("");
   adminSubjectFilterSelect.value = adminSubjectFilter;
 
-  const classOptions = [`<option value="">Klasse auswählen</option>`].concat(
+  const classOptions = ['<option value="">Klasse auswählen</option>'].concat(
     CLASS_LEVELS.map((level) => `<option value="${level}">${level}</option>`)
   );
   adminClassFilterSelect.innerHTML = classOptions.join("");
@@ -605,11 +579,7 @@ function renderPendingUploads() {
   }
 
   const items = state.pendingUploads
-    .filter((item) => (
-      item.teacherId === adminTeacherFilter &&
-      item.subject === adminSubjectFilter &&
-      item.classLevel === adminClassFilter
-    ))
+    .filter((item) => item.teacherId === adminTeacherFilter && item.subject === adminSubjectFilter && item.classLevel === adminClassFilter)
     .sort(sortUploads);
 
   if (!items.length) {
@@ -636,7 +606,6 @@ function renderPendingUploads() {
         <textarea rows="2" data-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
       </div>
       <div class="admin-actions">
-        <a class="secondary-btn" href="${escapeAttribute(item.previewUrl)}" target="_blank" rel="noopener noreferrer">Datei öffnen</a>
         <button type="button" class="primary-btn" data-approve="${item.id}">Freigeben</button>
         <button type="button" class="ghost-btn" data-reject="${item.id}">Löschen</button>
       </div>
@@ -708,11 +677,7 @@ function renderApprovedUploads() {
   }
 
   const items = state.approvedUploads
-    .filter((item) => (
-      item.teacherId === adminTeacherFilter &&
-      item.subject === adminSubjectFilter &&
-      item.classLevel === adminClassFilter
-    ))
+    .filter((item) => item.teacherId === adminTeacherFilter && item.subject === adminSubjectFilter && item.classLevel === adminClassFilter)
     .sort(sortUploads);
 
   if (!items.length) {
@@ -740,7 +705,6 @@ function renderApprovedUploads() {
         <textarea rows="2" data-approved-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
       </div>
       <div class="admin-actions">
-        <a class="secondary-btn" href="${escapeAttribute(item.previewUrl)}" target="_blank" rel="noopener noreferrer">Datei öffnen</a>
         <button type="button" class="ghost-btn" data-unapprove="${item.id}">Zur Prüfung zurück</button>
         <button type="button" class="ghost-btn" data-delete-approved="${item.id}">Löschen</button>
       </div>
@@ -807,7 +771,6 @@ function sortUploads(a, b) {
   if (a.type !== b.type) {
     return a.type === "Klassenarbeit" ? -1 : 1;
   }
-
   return getSortableTimestamp(b) - getSortableTimestamp(a);
 }
 
@@ -825,18 +788,33 @@ function getSelectedTeacher() {
   return state.teachers.find((teacher) => teacher.id === selectedTeacherId) || null;
 }
 
-function hasApprovedEntriesForClass(classLevel) {
-  return state.approvedUploads.some((item) => (
-    item.teacherId === selectedTeacherId &&
-    item.subject === selectedSubject &&
-    item.classLevel === classLevel
-  ));
+function getFilteredTeachers() {
+  const query = teacherSearchTerm.trim().toLowerCase();
+  const teachers = state.teachers.slice().sort((a, b) => a.code.localeCompare(b.code, "de"));
+  if (!query) {
+    return teachers;
+  }
+  return teachers.filter((teacher) => `${teacher.name} ${teacher.code}`.toLowerCase().includes(query));
 }
 
-function isPreviewableFile(fileName, previewUrl) {
+function getVisibleEntries() {
+  return state.approvedUploads
+    .filter((item) => item.teacherId === selectedTeacherId && item.subject === selectedSubject && item.classLevel === selectedClass)
+    .sort(sortUploads);
+}
+
+function hasApprovedEntriesForClass(classLevel) {
+  return state.approvedUploads.some((item) => item.teacherId === selectedTeacherId && item.subject === selectedSubject && item.classLevel === classLevel);
+}
+
+function isImageFile(fileName) {
   const lowerName = String(fileName ?? "").toLowerCase();
-  return Boolean(previewUrl) &&
-    [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".txt", ".html"].some((ending) => lowerName.endsWith(ending));
+  return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"].some((ending) => lowerName.endsWith(ending));
+}
+
+function isFramePreviewableFile(fileName, previewUrl) {
+  const lowerName = String(fileName ?? "").toLowerCase();
+  return Boolean(previewUrl) && [".pdf", ".txt", ".html"].some((ending) => lowerName.endsWith(ending));
 }
 
 function getSortableTimestamp(item) {
@@ -884,6 +862,39 @@ async function apiRequest(url, options = {}) {
   }
 
   return body;
+}
+
+function handleTeacherSearch() {
+  teacherSearchTerm = teacherSearch.value;
+  const visibleIds = new Set(getFilteredTeachers().map((teacher) => teacher.id));
+  if (selectedTeacherId && !visibleIds.has(selectedTeacherId)) {
+    selectedTeacherId = null;
+    selectedSubject = null;
+    selectedClass = null;
+    selectedEntryId = null;
+  }
+  renderAll();
+}
+
+function handleTeacherSelection() {
+  selectedTeacherId = teacherSelect.value || null;
+  selectedSubject = null;
+  selectedClass = null;
+  selectedEntryId = null;
+  renderAll();
+}
+
+function handleSubjectSelection() {
+  selectedSubject = subjectSelect.value || null;
+  selectedClass = null;
+  selectedEntryId = null;
+  renderAll();
+}
+
+function handleClassSelection() {
+  selectedClass = classSelect.value || null;
+  selectedEntryId = null;
+  renderAll();
 }
 
 function escapeHtml(value) {
