@@ -54,6 +54,14 @@
         "Deutsch",
         "Geschichte"
       ]
+    },
+    {
+      "id": "dd317e05-d819-4257-9ecb-86a45e3969a4",
+      "name": "Herr Dr. Börger",
+      "code": "BRG",
+      "subjects": [
+        "Chemie"
+      ]
     }
   ],
   "pendingUploads": [],
