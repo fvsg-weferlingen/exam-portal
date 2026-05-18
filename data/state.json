@@ -272,6 +272,15 @@
         "Sport",
         "Psychologie"
       ]
+    },
+    {
+      "id": "60484caa-3ca1-4375-9ae3-71ade24944a3",
+      "name": "Frau Mischke",
+      "code": "MIK",
+      "subjects": [
+        "Deutsch",
+        "Musik"
+      ]
     }
   ],
   "pendingUploads": [],
