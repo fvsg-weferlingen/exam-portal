@@ -183,6 +183,15 @@
         "Wirtschaft",
         "Geographie"
       ]
+    },
+    {
+      "id": "d4cb8553-45d3-4b4d-9b92-93ce844ea6a1",
+      "name": "Frau Jahn",
+      "code": "JAH",
+      "subjects": [
+        "Deutsch",
+        "Wirtschaft"
+      ]
     }
   ],
   "pendingUploads": [],
