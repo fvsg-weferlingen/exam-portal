@@ -173,6 +173,16 @@
         "Spanisch",
         "Ehtik"
       ]
+    },
+    {
+      "id": "4b4955b3-1c64-4a81-b237-fb1312c1f5bc",
+      "name": "Herr Hübner",
+      "code": "HÜB",
+      "subjects": [
+        "Sport",
+        "Wirtschaft",
+        "Geographie"
+      ]
     }
   ],
   "pendingUploads": [],
