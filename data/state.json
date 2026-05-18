@@ -335,6 +335,15 @@
         "Deutsch",
         "Geschichte"
       ]
+    },
+    {
+      "id": "9ab1d150-8ff5-4b4b-9c3b-fadf614c508d",
+      "name": "Herr Scheffler",
+      "code": "PSC",
+      "subjects": [
+        "Chemie",
+        "Mathematik"
+      ]
     }
   ],
   "pendingUploads": [],
