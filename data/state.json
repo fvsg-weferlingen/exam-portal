@@ -36,6 +36,15 @@
         "Mathematik",
         "Sport"
       ]
+    },
+    {
+      "id": "51f18dd3-af68-4bee-b035-556e3f19c40f",
+      "name": "Herr Assel",
+      "code": "CAS",
+      "subjects": [
+        "Spanisch",
+        "Sozialkunde"
+      ]
     }
   ],
   "pendingUploads": [],
