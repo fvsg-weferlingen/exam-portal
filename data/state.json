@@ -45,6 +45,15 @@
         "Spanisch",
         "Sozialkunde"
       ]
+    },
+    {
+      "id": "18b64dad-da74-4dab-a1a9-7a9e5c046eeb",
+      "name": "Frau Aust",
+      "code": "AUT",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
