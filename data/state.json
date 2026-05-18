@@ -81,6 +81,15 @@
         "Ehtik",
         "PHI"
       ]
+    },
+    {
+      "id": "0aaeaede-f929-4865-8079-f4ea5e6f5555",
+      "name": "Frau Döring",
+      "code": "DÖR",
+      "subjects": [
+        "Mathe",
+        "Musik"
+      ]
     }
   ],
   "pendingUploads": [],
