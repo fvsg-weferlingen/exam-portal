@@ -155,6 +155,15 @@
         "Mathe",
         "Wirtschaft"
       ]
+    },
+    {
+      "id": "eb6364dd-6bc4-4b43-9aed-62f3393ad958",
+      "name": "Frau Heinze",
+      "code": "HEN",
+      "subjects": [
+        "Informatik",
+        "Russisch"
+      ]
     }
   ],
   "pendingUploads": [],
