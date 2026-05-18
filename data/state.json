@@ -454,6 +454,16 @@
         "Biologie",
         "Sport"
       ]
+    },
+    {
+      "id": "05aa6d9e-46c7-4293-adc1-cbdcaeda83ed",
+      "name": "Herr Wohlfahrt",
+      "code": "WHL",
+      "subjects": [
+        "Biologie",
+        "Astronomie",
+        "Psychologie"
+      ]
     }
   ],
   "pendingUploads": [],
