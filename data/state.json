@@ -398,6 +398,16 @@
         "Deutsch",
         "Russisch"
       ]
+    },
+    {
+      "id": "8a002ab7-8e8f-4ca5-8454-1d2c6b6406fd",
+      "name": "Herr Steohan",
+      "code": "STE",
+      "subjects": [
+        "Mathematik",
+        "Physik",
+        "Astronomie"
+      ]
     }
   ],
   "pendingUploads": [],
