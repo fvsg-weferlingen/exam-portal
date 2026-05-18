@@ -125,6 +125,15 @@
       "subjects": [
         "Deutsch"
       ]
+    },
+    {
+      "id": "35f611b0-9f3f-46a0-b467-1edbc0a655c8",
+      "name": "Frau Gräf",
+      "code": "GRF",
+      "subjects": [
+        "Deutsch",
+        "Kunst"
+      ]
     }
   ],
   "pendingUploads": [],
