@@ -317,6 +317,15 @@
         "Biologie",
         "Chemie"
       ]
+    },
+    {
+      "id": "b3c5ce26-a5af-4ee9-a314-b27f113fa326",
+      "name": "Herr Rumler",
+      "code": "RUM",
+      "subjects": [
+        "Geschichte",
+        "Sozialkunde"
+      ]
     }
   ],
   "pendingUploads": [],
