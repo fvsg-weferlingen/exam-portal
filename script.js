@@ -421,6 +421,7 @@ async function handleUpload(event) {
     populateUploadTeachers();
     renderAll();
     uploadMessage.textContent = "Der Upload wurde auf GitHub gespeichert und wartet jetzt auf Freigabe.";
+    closeModal(uploadModal);
   } catch (error) {
     uploadMessage.textContent = error.message || "Der Upload konnte nicht gespeichert werden.";
   }
