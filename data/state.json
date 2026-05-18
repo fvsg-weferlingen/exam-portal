@@ -466,7 +466,8 @@
       ]
     }
   ],
-  "pendingUploads": [
+  "pendingUploads": [],
+  "approvedUploads": [
     {
       "id": "96a21916-e8aa-46ce-a391-ef7b7958fa2f",
       "teacherId": "teacher-default-wag",
@@ -481,6 +482,5 @@
       "previewUrl": "https://raw.githubusercontent.com/fvsg-weferlingen/exam-portal/main/uploads/2026/wag/mathematik/2026-05-18T20-07-29.176Z-csm-weferlingen-gymnasium-3df3906ccd.jpg",
       "uploadedAt": "2026-05-18T20:07:30.084Z"
     }
-  ],
-  "approvedUploads": []
+  ]
 }
