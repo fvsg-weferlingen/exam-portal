@@ -209,6 +209,15 @@
       "subjects": [
         "Englisch"
       ]
+    },
+    {
+      "id": "9427ff2e-a606-4bb5-bc1a-76bd7112a70c",
+      "name": "Frau Kothe",
+      "code": "KTE",
+      "subjects": [
+        "Mathe",
+        "Physik"
+      ]
     }
   ],
   "pendingUploads": [],
