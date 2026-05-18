@@ -8,6 +8,15 @@
         "Mathematik",
         "Physik"
       ]
+    },
+    {
+      "id": "d3f02757-7689-4954-a3cf-09ff1c4a3c7a",
+      "name": "Frau Abraham",
+      "code": "ABR",
+      "subjects": [
+        "Biologie",
+        "Ethik"
+      ]
     }
   ],
   "pendingUploads": [],
