@@ -353,6 +353,15 @@
         "Mathematik",
         "Physik"
       ]
+    },
+    {
+      "id": "689b7575-33d9-4b52-adba-38ea04320463",
+      "name": "Herr Schönbach",
+      "code": "SÖB",
+      "subjects": [
+        "Deutsch",
+        "Ehtik"
+      ]
     }
   ],
   "pendingUploads": [],
