@@ -227,6 +227,15 @@
         "Biologie",
         "Chemie"
       ]
+    },
+    {
+      "id": "0fb86c9f-4e6a-4dbe-bbc1-ae7398108d5d",
+      "name": "Frau Lemm",
+      "code": "LEM",
+      "subjects": [
+        "Spanisch",
+        "Französisch"
+      ]
     }
   ],
   "pendingUploads": [],
