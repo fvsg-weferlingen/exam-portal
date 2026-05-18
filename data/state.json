@@ -308,6 +308,15 @@
         "Sport",
         "Geschichte"
       ]
+    },
+    {
+      "id": "7a010e4a-63b9-4cb3-bbce-052b91ca3ce3",
+      "name": "Frau Dr. Preißler",
+      "code": "PRL",
+      "subjects": [
+        "Biologie",
+        "Chemie"
+      ]
     }
   ],
   "pendingUploads": [],
