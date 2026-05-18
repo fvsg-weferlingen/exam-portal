@@ -108,6 +108,15 @@
         "Geographie",
         "Sozialkunde"
       ]
+    },
+    {
+      "id": "8fd72810-90ac-4bb0-ad9e-ec7cc8906070",
+      "name": "Frau Ebeling",
+      "code": "EBE",
+      "subjects": [
+        "Chemie",
+        "Deutsch"
+      ]
     }
   ],
   "pendingUploads": [],
