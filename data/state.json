@@ -99,6 +99,15 @@
         "Kunst",
         "Geschichte"
       ]
+    },
+    {
+      "id": "aa908153-bcce-47d5-8ba1-fa00ff83ff70",
+      "name": "Frau Drespa",
+      "code": "DRS",
+      "subjects": [
+        "Geographie",
+        "Sozialkunde"
+      ]
     }
   ],
   "pendingUploads": [],
