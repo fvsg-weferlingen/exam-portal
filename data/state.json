@@ -389,6 +389,15 @@
         "Französisch",
         "Spanisch"
       ]
+    },
+    {
+      "id": "d1cf56e3-a3b8-4e1b-9a46-0d25c79b1870",
+      "name": "Frau Sommer",
+      "code": "SOM",
+      "subjects": [
+        "Deutsch",
+        "Russisch"
+      ]
     }
   ],
   "pendingUploads": [],
