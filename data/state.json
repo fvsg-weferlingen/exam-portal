@@ -408,6 +408,15 @@
         "Physik",
         "Astronomie"
       ]
+    },
+    {
+      "id": "053a9c87-3d37-4770-b391-16dca47c1547",
+      "name": "Frau Vogel",
+      "code": "VOG",
+      "subjects": [
+        "Deutsch",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
