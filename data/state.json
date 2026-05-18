@@ -344,6 +344,15 @@
         "Chemie",
         "Mathematik"
       ]
+    },
+    {
+      "id": "8819e654-ffe1-4322-8e24-0ebcfd3b8bfc",
+      "name": "Frau Scholz",
+      "code": "KSC",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
     }
   ],
   "pendingUploads": [],
