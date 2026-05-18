@@ -299,6 +299,15 @@
         "Geographie",
         "Wirtschaft"
       ]
+    },
+    {
+      "id": "282ddbbd-ff01-4e1f-beb7-154edfb9640a",
+      "name": "Herr Preißler",
+      "code": "PRE",
+      "subjects": [
+        "Sport",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
