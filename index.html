@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schularchiv</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-orb orb-left"></div>
+  <div class="background-orb orb-right"></div>
+
+  <main class="app-shell">
+    <section id="gateScreen" class="gate-card">
+      <div class="badge">Zugang</div>
+      <h1>Schularchiv</h1>
+      <p>Bitte gib das Passwort ein, um die Inhalte zu sehen.</p>
+      <form id="gateForm" class="stack">
+        <label for="sitePassword" class="sr-only">Passwort</label>
+        <input id="sitePassword" name="sitePassword" type="password" inputmode="numeric" placeholder="Passwort eingeben" autocomplete="off" required>
+        <button type="submit" class="primary-btn">Weiter</button>
+      </form>
+      <p id="gateMessage" class="message"></p>
+    </section>
+
+    <section id="appScreen" class="hidden">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Archiv</p>
+          <h1>Lehrer, Fächer und Arbeiten</h1>
+        </div>
+        <button id="adminAccessBtn" class="ghost-btn">Adminverwaltung</button>
+      </header>
+
+      <section class="hero-panel">
+        <div>
+          <p class="badge">Schnellzugriff</p>
+          <h2>Lehrerkürzel auswählen</h2>
+          <p>Wähle erst den Lehrer, dann das Fach und danach die Klasse. Klassenarbeiten stehen immer ganz oben.</p>
+        </div>
+        <button id="openUploadBtn" class="primary-btn">Upload für alle</button>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Lehrer</h3>
+            <p>Alle sichtbaren Kürzel</p>
+          </div>
+          <div id="teacherList" class="chip-grid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Fächer</h3>
+            <p id="subjectHint">Bitte zuerst einen Lehrer auswählen.</p>
+          </div>
+          <div id="subjectList" class="chip-grid empty-state"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Klassen</h3>
+            <p id="classHint">Bitte zuerst ein Fach auswählen.</p>
+          </div>
+          <div id="classList" class="chip-grid empty-state"></div>
+        </div>
+      </section>
+
+      <section class="panel archive-panel">
+        <div class="panel-head">
+          <h3>Arbeiten und Tests</h3>
+          <p id="archiveHint">Bitte Lehrer, Fach und Klasse auswählen.</p>
+        </div>
+        <div id="archiveList" class="card-list empty-state"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="uploadModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card wide-card">
+      <div class="modal-head">
+        <div>
+          <p class="badge">Upload</p>
+          <h2>Neue Arbeit hochladen</h2>
+        </div>
+        <button class="icon-btn" data-close="uploadModal" aria-label="Schließen">×</button>
+      </div>
+      <form id="uploadForm" class="form-grid">
+        <label>
+          Lehrer
+          <select id="uploadTeacher" required></select>
+        </label>
+        <label>
+          Fach
+          <select id="uploadSubject" required></select>
+        </label>
+        <label>
+          Klasse
+          <select id="uploadClass" required></select>
+        </label>
+        <label>
+          Art
+          <select id="uploadType" required>
+            <option value="Klassenarbeit">Klassenarbeit</option>
+            <option value="Test">Test</option>
+          </select>
+        </label>
+        <label>
+          Datum
+          <input id="uploadDate" type="date" required>
+        </label>
+        <label>
+          Jahr
+          <input id="uploadYear" type="number" min="2000" max="2099" placeholder="z. B. 2023" required>
+        </label>
+        <label class="full-width">
+          Titel
+          <input id="uploadTitle" type="text" placeholder="z. B. Bruchrechnen Klassenarbeit" required>
+        </label>
+        <label class="full-width">
+          Datei
+          <input id="uploadFile" type="file" required>
+        </label>
+        <label class="full-width">
+          Hinweis
+          <textarea id="uploadNote" rows="3" placeholder="Optionaler Hinweis"></textarea>
+        </label>
+        <div class="full-width form-actions">
+          <button type="submit" class="primary-btn">Zur Prüfung einreichen</button>
+        </div>
+      </form>
+      <p id="uploadMessage" class="message"></p>
+    </div>
+  </div>
+
+  <div id="adminModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card admin-card">
+      <div class="modal-head">
+        <div>
+          <p class="badge">Admin</p>
+          <h2>Adminzentrale</h2>
+        </div>
+        <button class="icon-btn" data-close="adminModal" aria-label="Schließen">×</button>
+      </div>
+
+      <section class="admin-section">
+        <div class="section-head">
+          <h3>Lehrer verwalten</h3>
+          <p>Name, Kürzel und Fächer festlegen</p>
+        </div>
+        <form id="teacherForm" class="form-grid compact">
+          <input id="teacherEditId" type="hidden">
+          <label>
+            Lehrername
+            <input id="teacherName" type="text" placeholder="z. B. Herr Wagner" required>
+          </label>
+          <label>
+            Kürzel
+            <input id="teacherCode" type="text" placeholder="z. B. WAG" maxlength="10" required>
+          </label>
+          <label class="full-width">
+            Fächer
+            <input id="teacherSubjects" type="text" placeholder="z. B. Mathematik, Physik, Chemie" required>
+          </label>
+          <div class="full-width form-actions">
+            <button type="submit" class="primary-btn">Lehrer speichern</button>
+          </div>
+        </form>
+        <div id="adminTeacherList" class="admin-list"></div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-head">
+          <h3>Uploads prüfen</h3>
+          <p>Freigeben, bearbeiten oder löschen</p>
+        </div>
+        <div id="pendingList" class="admin-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <template id="archiveItemTemplate">
+    <article class="archive-card">
+      <div class="archive-topline">
+        <span class="pill"></span>
+        <span class="date-line"></span>
+      </div>
+      <h4></h4>
+      <p class="meta-line"></p>
+      <p class="note-line hidden"></p>
+      <a class="secondary-btn" target="_blank" rel="noopener noreferrer">Datei öffnen</a>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
