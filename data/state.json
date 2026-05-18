@@ -436,6 +436,15 @@
         "Englisch",
         "Russisch"
       ]
+    },
+    {
+      "id": "f6b4c214-a169-478b-bcbf-88ceb560da43",
+      "name": "Herr Wenz",
+      "code": "WEN",
+      "subjects": [
+        "Russisch",
+        "Englisch"
+      ]
     }
   ],
   "pendingUploads": [],
