@@ -417,6 +417,15 @@
         "Deutsch",
         "Geschichte"
       ]
+    },
+    {
+      "id": "3d537370-ecd9-47ac-9401-77034d530b32",
+      "name": "Frau Warweg",
+      "code": "WAW",
+      "subjects": [
+        "Englisch",
+        "Sozialkunde"
+      ]
     }
   ],
   "pendingUploads": [],
