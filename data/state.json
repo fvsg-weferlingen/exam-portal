@@ -218,6 +218,15 @@
         "Mathe",
         "Physik"
       ]
+    },
+    {
+      "id": "34308fd3-a1be-4448-b2f9-5f8543adff8d",
+      "name": "Frau Lagemann",
+      "code": "LAG",
+      "subjects": [
+        "Biologie",
+        "Chemie"
+      ]
     }
   ],
   "pendingUploads": [],
