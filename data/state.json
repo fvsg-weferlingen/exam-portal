@@ -245,6 +245,15 @@
         "Französisch",
         "Russisch"
       ]
+    },
+    {
+      "id": "92deac4e-60d3-4656-91e0-bdd13e09d3a3",
+      "name": "Frau Lindner",
+      "code": "LIN",
+      "subjects": [
+        "Chemie",
+        "Geographie"
+      ]
     }
   ],
   "pendingUploads": [],
