@@ -1,0 +1,15 @@
+{
+  "teachers": [
+    {
+      "id": "teacher-default-wag",
+      "name": "Herr Wagner",
+      "code": "WAG",
+      "subjects": [
+        "Mathematik",
+        "Physik"
+      ]
+    }
+  ],
+  "pendingUploads": [],
+  "approvedUploads": []
+}
