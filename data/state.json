@@ -145,6 +145,16 @@
         "Ehtik",
         "Kunst"
       ]
+    },
+    {
+      "id": "ba4a539c-45df-4f80-8c50-f04e1c06f15e",
+      "name": "Frau Hartmann",
+      "code": "HAR",
+      "subjects": [
+        "Deutsch",
+        "Mathe",
+        "Wirtschaft"
+      ]
     }
   ],
   "pendingUploads": [],
