@@ -1,0 +1,12 @@
+{
+  "name": "exam-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Exam portal with GitHub-backed persistence.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "check": "node --check script.js && node --check api/action.js && node --check api/state.js && node --check api/_lib/github-store.js"
+  }
+}
