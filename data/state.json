@@ -164,6 +164,15 @@
         "Informatik",
         "Russisch"
       ]
+    },
+    {
+      "id": "e338e3dd-7a3d-4a44-bd71-78d775c4f085",
+      "name": "Frau Herrman",
+      "code": "HER",
+      "subjects": [
+        "Spanisch",
+        "Ehtik"
+      ]
     }
   ],
   "pendingUploads": [],
