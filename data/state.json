@@ -117,6 +117,14 @@
         "Chemie",
         "Deutsch"
       ]
+    },
+    {
+      "id": "08697a3e-a2e6-4ccc-9fdc-05074df9e69c",
+      "name": "Herr Franke",
+      "code": "FRN",
+      "subjects": [
+        "Deutsch"
+      ]
     }
   ],
   "pendingUploads": [],
