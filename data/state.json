@@ -254,6 +254,15 @@
         "Chemie",
         "Geographie"
       ]
+    },
+    {
+      "id": "3dbda3ea-f0c0-4722-9fff-3e500a200ac0",
+      "name": "Frau Mahrenholz",
+      "code": "MAH",
+      "subjects": [
+        "Mathematik",
+        "Religion"
+      ]
     }
   ],
   "pendingUploads": [],
