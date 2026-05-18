@@ -134,6 +134,17 @@
         "Deutsch",
         "Kunst"
       ]
+    },
+    {
+      "id": "94afde2f-3500-46dc-9dc4-bff3c8cb4960",
+      "name": "Herr Grießbach",
+      "code": "GRI",
+      "subjects": [
+        "Deutsch",
+        "Geschichte",
+        "Ehtik",
+        "Kunst"
+      ]
     }
   ],
   "pendingUploads": [],
