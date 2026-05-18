@@ -263,6 +263,15 @@
         "Mathematik",
         "Religion"
       ]
+    },
+    {
+      "id": "a4428390-fbee-417c-8370-315f0113396a",
+      "name": "Herr Mehr",
+      "code": "MHR",
+      "subjects": [
+        "Sport",
+        "Psychologie"
+      ]
     }
   ],
   "pendingUploads": [],
