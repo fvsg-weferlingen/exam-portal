@@ -17,6 +17,16 @@
         "Biologie",
         "Ethik"
       ]
+    },
+    {
+      "id": "1917614d-968d-42fc-97f2-32b5ba6ef097",
+      "name": "Frau Anders",
+      "code": "AND",
+      "subjects": [
+        "Englisch",
+        "Deutsch",
+        "Russisch"
+      ]
     }
   ],
   "pendingUploads": [],
