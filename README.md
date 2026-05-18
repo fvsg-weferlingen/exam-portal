@@ -2,12 +2,12 @@
 
 Auf dieser Plattform koennen Schueler Klassenarbeiten, Tests und Pruefungen hochladen und fuer andere Schueler zur Verfuegung stellen.
 
-## Was jetzt anders ist
+## Projektstatus
 
-Die Website speichert Daten nicht mehr nur lokal im Browser. Lehrer, Freigaben und Uploads werden jetzt ueber eine Server-API direkt in GitHub gespeichert:
+Die Website speichert Daten jetzt ueber eine Server-API direkt in GitHub:
 
 - Stammdaten in `data/state.json`
-- Upload-Dateien unter `uploads/...`
+- Upload-Dateien in `uploads/...`
 
 ## Projektdateien
 
@@ -18,10 +18,18 @@ Die Website speichert Daten nicht mehr nur lokal im Browser. Lehrer, Freigaben u
 - `api/action.js`
 - `api/_lib/github-store.js`
 
-## Passwoerter
+## Funktionen
 
-- Seitenpasswort: `1208`
-- Adminpasswort: `2702`
+- Zugang ueber Passwort `1208`
+- Adminverwaltung oben rechts mit Passwort `2702`
+- Lehrer mit Kuerzel und Faechern in der Adminzentrale verwalten
+- Lehrer auswaehlen, dann Fach, dann Klasse `5` bis `12`
+- Uploads mit Lehrer, Fach, Jahr, Klasse und Datei
+- Neue Uploads werden zuerst geprueft und erst danach freigegeben
+- Klassenarbeiten stehen vor Tests
+- Inhalte erscheinen erst nach Auswahl von Lehrer, Fach und Klasse
+- Klassen ohne Inhalte sind rot markiert
+- Unterstuetzte Dateien koennen direkt auf der Website als Vorschau angezeigt werden
 
 ## Wichtiger Hinweis
 
@@ -31,7 +39,7 @@ Wenn das GitHub-Repository oeffentlich ist, sind auch hochgeladene Dateien ueber
 
 Am besten deployest du das Projekt auf Vercel. Dort bleibt dein GitHub-Token geheim, und trotzdem kann die Website sicher in dein Repository schreiben.
 
-## Benötigte Umgebungsvariablen
+## Benoetigte Umgebungsvariablen
 
 Im Hosting muessen diese vier Variablen gesetzt werden:
 
