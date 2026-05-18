@@ -62,6 +62,15 @@
       "subjects": [
         "Chemie"
       ]
+    },
+    {
+      "id": "5c690add-cf01-435b-897d-f843a065262d",
+      "name": "Frau Cornelsen",
+      "code": "COR",
+      "subjects": [
+        "Deutsch",
+        "Wirtschaft"
+      ]
     }
   ],
   "pendingUploads": [],
