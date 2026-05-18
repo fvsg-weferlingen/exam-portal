@@ -290,6 +290,15 @@
         "Musik",
         "Ehtik"
       ]
+    },
+    {
+      "id": "e7befcff-2ce3-4299-b079-d7840848138a",
+      "name": "Her Neuschulz",
+      "code": "NEU",
+      "subjects": [
+        "Geographie",
+        "Wirtschaft"
+      ]
     }
   ],
   "pendingUploads": [],
