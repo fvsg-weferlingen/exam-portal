@@ -192,6 +192,15 @@
         "Deutsch",
         "Wirtschaft"
       ]
+    },
+    {
+      "id": "c78d6d96-524d-4067-8b13-16bf3ff8869a",
+      "name": "Frau Jakisch",
+      "code": "JAK",
+      "subjects": [
+        "Wirtschaft",
+        "Sport"
+      ]
     }
   ],
   "pendingUploads": [],
