@@ -71,6 +71,16 @@
         "Deutsch",
         "Wirtschaft"
       ]
+    },
+    {
+      "id": "e875272e-0614-4924-975f-8ab21c0315f7",
+      "name": "Frau Dalhoff",
+      "code": "DAL",
+      "subjects": [
+        "Englisch",
+        "Ehtik",
+        "PHI"
+      ]
     }
   ],
   "pendingUploads": [],
