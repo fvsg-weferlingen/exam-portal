@@ -90,6 +90,15 @@
         "Mathe",
         "Musik"
       ]
+    },
+    {
+      "id": "5534adbb-5c3f-4f52-8a43-5f6081cde06a",
+      "name": "Herr Dr. Niemeck",
+      "code": "NIE",
+      "subjects": [
+        "Kunst",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
