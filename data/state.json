@@ -281,6 +281,15 @@
         "Deutsch",
         "Musik"
       ]
+    },
+    {
+      "id": "3ce88d53-2bbd-47a6-aa49-0dfbb016fd8e",
+      "name": "Frau Neumann-Schindler",
+      "code": "NSC",
+      "subjects": [
+        "Musik",
+        "Ehtik"
+      ]
     }
   ],
   "pendingUploads": [],
