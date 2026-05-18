@@ -236,6 +236,15 @@
         "Spanisch",
         "Französisch"
       ]
+    },
+    {
+      "id": "4fabed1f-aad1-4024-8226-1f87acc2cdca",
+      "name": "Frau Armerding",
+      "code": "ARM",
+      "subjects": [
+        "Französisch",
+        "Russisch"
+      ]
     }
   ],
   "pendingUploads": [],
