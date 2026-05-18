@@ -371,6 +371,15 @@
         "Mathematik",
         "Physik"
       ]
+    },
+    {
+      "id": "d1aa7ded-618c-43b3-afbf-c893551f0713",
+      "name": "Herr Schulze",
+      "code": "ISC",
+      "subjects": [
+        "Musik",
+        "Geschichte"
+      ]
     }
   ],
   "pendingUploads": [],
