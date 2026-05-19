@@ -466,22 +466,7 @@
       ]
     }
   ],
-  "pendingUploads": [
-    {
-      "id": "973d594c-5c50-4fd9-a0a0-ec34c035412e",
-      "teacherId": "aa908153-bcce-47d5-8ba1-fa00ff83ff70",
-      "subject": "Geographie",
-      "classLevel": "9",
-      "type": "Test",
-      "year": "2025",
-      "title": "Ägypten",
-      "note": "",
-      "fileName": "egypt-26909_960_720.png",
-      "filePath": "uploads/2025/drs/geographie/2026-05-19T18-31-02.107Z-egypt-26909-960-720.png",
-      "previewUrl": "https://raw.githubusercontent.com/fvsg-weferlingen/exam-portal/main/uploads/2025/drs/geographie/2026-05-19T18-31-02.107Z-egypt-26909-960-720.png",
-      "uploadedAt": "2026-05-19T18:29:37.406Z"
-    }
-  ],
+  "pendingUploads": [],
   "approvedUploads": [
     {
       "id": "96a21916-e8aa-46ce-a391-ef7b7958fa2f",
@@ -496,6 +481,20 @@
       "filePath": "uploads/2026/wag/mathematik/2026-05-18T20-07-29.176Z-csm-weferlingen-gymnasium-3df3906ccd.jpg",
       "previewUrl": "https://raw.githubusercontent.com/fvsg-weferlingen/exam-portal/main/uploads/2026/wag/mathematik/2026-05-18T20-07-29.176Z-csm-weferlingen-gymnasium-3df3906ccd.jpg",
       "uploadedAt": "2026-05-18T20:07:30.084Z"
+    },
+    {
+      "id": "973d594c-5c50-4fd9-a0a0-ec34c035412e",
+      "teacherId": "aa908153-bcce-47d5-8ba1-fa00ff83ff70",
+      "subject": "Geographie",
+      "classLevel": "9",
+      "type": "Test",
+      "year": "2025",
+      "title": "Ägypten",
+      "note": "",
+      "fileName": "egypt-26909_960_720.png",
+      "filePath": "uploads/2025/drs/geographie/2026-05-19T18-31-02.107Z-egypt-26909-960-720.png",
+      "previewUrl": "https://raw.githubusercontent.com/fvsg-weferlingen/exam-portal/main/uploads/2025/drs/geographie/2026-05-19T18-31-02.107Z-egypt-26909-960-720.png",
+      "uploadedAt": "2026-05-19T18:29:37.406Z"
     }
   ]
 }
