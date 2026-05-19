@@ -13,6 +13,9 @@ let selectedSubject = null;
 let selectedClass = null;
 let selectedEntryId = null;
 let teacherSearchTerm = "";
+let adminTeacherFilter = "";
+let adminSubjectFilter = "";
+let adminClassFilter = "";
 let isLoadingState = false;
 let loadError = "";
 
@@ -51,6 +54,9 @@ const uploadClass = document.getElementById("uploadClass");
 const uploadMessage = document.getElementById("uploadMessage");
 const teacherForm = document.getElementById("teacherForm");
 const adminTeacherList = document.getElementById("adminTeacherList");
+const adminTeacherFilterSelect = document.getElementById("adminTeacherFilter");
+const adminSubjectFilterSelect = document.getElementById("adminSubjectFilter");
+const adminClassFilterSelect = document.getElementById("adminClassFilter");
 const pendingList = document.getElementById("pendingList");
 const approvedList = document.getElementById("approvedList");
 const archiveItemTemplate = document.getElementById("archiveItemTemplate");
@@ -69,6 +75,9 @@ classSelect.addEventListener("change", handleClassSelection);
 uploadTeacher.addEventListener("change", populateUploadSubjects);
 uploadForm.addEventListener("submit", handleUpload);
 teacherForm.addEventListener("submit", handleTeacherSave);
+adminTeacherFilterSelect.addEventListener("change", handleAdminTeacherFilterChange);
+adminSubjectFilterSelect.addEventListener("change", handleAdminSubjectFilterChange);
+adminClassFilterSelect.addEventListener("change", handleAdminClassFilterChange);
 
 document.querySelectorAll("[data-close]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -167,6 +176,17 @@ function sanitizeSelections() {
     selectedEntryId = null;
   }
 
+  if (!state.teachers.some((teacher) => teacher.id === adminTeacherFilter)) {
+    adminTeacherFilter = "";
+    adminSubjectFilter = "";
+    adminClassFilter = "";
+  }
+
+  const adminTeacher = state.teachers.find((teacher) => teacher.id === adminTeacherFilter);
+  if (adminTeacher && !adminTeacher.subjects.includes(adminSubjectFilter)) {
+    adminSubjectFilter = "";
+    adminClassFilter = "";
+  }
 }
 
 function renderAll() {
@@ -435,9 +455,59 @@ async function handleTeacherSave(event) {
 }
 
 function renderAdmin() {
+  renderAdminFilters();
   renderAdminTeachers();
   renderPendingUploads();
   renderApprovedUploads();
+}
+
+function renderAdminFilters() {
+  adminTeacherFilterSelect.innerHTML = "";
+  adminSubjectFilterSelect.innerHTML = "";
+  adminClassFilterSelect.innerHTML = "";
+
+  const teacherOptions = ['<option value="">Lehrer auswählen</option>'].concat(
+    state.teachers
+      .slice()
+      .sort((a, b) => a.code.localeCompare(b.code, "de"))
+      .map((teacher) => `<option value="${teacher.id}">${escapeHtml(teacher.name)} (${escapeHtml(teacher.code)})</option>`)
+  );
+  adminTeacherFilterSelect.innerHTML = teacherOptions.join("");
+  adminTeacherFilterSelect.value = adminTeacherFilter;
+
+  const teacher = state.teachers.find((entry) => entry.id === adminTeacherFilter);
+  const subjectOptions = ['<option value="">Fach auswählen</option>'];
+  if (teacher) {
+    teacher.subjects.forEach((subject) => {
+      subjectOptions.push(`<option value="${escapeAttribute(subject)}">${escapeHtml(subject)}</option>`);
+    });
+  }
+  adminSubjectFilterSelect.innerHTML = subjectOptions.join("");
+  adminSubjectFilterSelect.value = adminSubjectFilter;
+
+  const classOptions = ['<option value="">Klasse auswählen</option>'].concat(
+    CLASS_LEVELS.map((level) => `<option value="${level}">${level}</option>`)
+  );
+  adminClassFilterSelect.innerHTML = classOptions.join("");
+  adminClassFilterSelect.value = adminClassFilter;
+}
+
+function handleAdminTeacherFilterChange() {
+  adminTeacherFilter = adminTeacherFilterSelect.value;
+  adminSubjectFilter = "";
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminSubjectFilterChange() {
+  adminSubjectFilter = adminSubjectFilterSelect.value;
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminClassFilterChange() {
+  adminClassFilter = adminClassFilterSelect.value;
+  renderAdmin();
 }
 
 function renderAdminTeachers() {
@@ -504,7 +574,13 @@ function renderAdminTeachers() {
 function renderPendingUploads() {
   pendingList.innerHTML = "";
 
+  if (!adminTeacherFilter || !adminSubjectFilter || !adminClassFilter) {
+    pendingList.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
+    return;
+  }
+
   const items = state.pendingUploads
+    .filter((item) => item.teacherId === adminTeacherFilter && item.subject === adminSubjectFilter && item.classLevel === adminClassFilter)
     .sort(sortUploads);
 
   if (!items.length) {
@@ -529,10 +605,6 @@ function renderPendingUploads() {
           <option value="Test" ${item.type === "Test" ? "selected" : ""}>Test</option>
         </select>
         <textarea rows="2" data-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
-      </div>
-      <div class="admin-actions">
-        <input type="file" data-file-input="pending" data-id="${item.id}">
-        <button type="button" class="ghost-btn" data-file-save="pending" data-id="${item.id}">Datei ersetzen</button>
       </div>
       <div class="admin-actions">
         <button type="button" class="primary-btn" data-approve="${item.id}">Freigeben</button>
@@ -595,38 +667,18 @@ function attachPendingUploadEvents() {
       }
     });
   });
-
-  pendingList.querySelectorAll('[data-file-save="pending"]').forEach((button) => {
-    button.addEventListener("click", async () => {
-      const input = pendingList.querySelector(`[data-file-input="pending"][data-id="${button.dataset.id}"]`);
-      const file = input?.files?.[0];
-      if (!file) {
-        window.alert("Bitte zuerst eine neue Datei auswählen.");
-        return;
-      }
-
-      try {
-        const fileDataUrl = await readFileAsDataUrl(file);
-        const response = await postAction("replacePendingUploadFile", {
-          uploadId: button.dataset.id,
-          fileName: file.name,
-          fileDataUrl
-        });
-        state = normalizeState(response.state);
-        sanitizeSelections();
-        renderAll();
-        renderAdmin();
-      } catch (error) {
-        window.alert(error.message || "Die Datei konnte nicht ersetzt werden.");
-      }
-    });
-  });
 }
 
 function renderApprovedUploads() {
   approvedList.innerHTML = "";
 
+  if (!adminTeacherFilter || !adminSubjectFilter || !adminClassFilter) {
+    approvedList.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
+    return;
+  }
+
   const items = state.approvedUploads
+    .filter((item) => item.teacherId === adminTeacherFilter && item.subject === adminSubjectFilter && item.classLevel === adminClassFilter)
     .sort(sortUploads);
 
   if (!items.length) {
@@ -652,10 +704,6 @@ function renderApprovedUploads() {
         </select>
         <input type="text" value="${escapeAttribute(item.subject)}" data-approved-field="subject" data-id="${item.id}">
         <textarea rows="2" data-approved-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
-      </div>
-      <div class="admin-actions">
-        <input type="file" data-file-input="approved" data-id="${item.id}">
-        <button type="button" class="ghost-btn" data-file-save="approved" data-id="${item.id}">Datei ersetzen</button>
       </div>
       <div class="admin-actions">
         <button type="button" class="ghost-btn" data-unapprove="${item.id}">Zur Prüfung zurück</button>
@@ -715,32 +763,6 @@ function attachApprovedUploadEvents() {
         renderAdmin();
       } catch (error) {
         window.alert(error.message || "Der Eintrag konnte nicht gelöscht werden.");
-      }
-    });
-  });
-
-  approvedList.querySelectorAll('[data-file-save="approved"]').forEach((button) => {
-    button.addEventListener("click", async () => {
-      const input = approvedList.querySelector(`[data-file-input="approved"][data-id="${button.dataset.id}"]`);
-      const file = input?.files?.[0];
-      if (!file) {
-        window.alert("Bitte zuerst eine neue Datei auswählen.");
-        return;
-      }
-
-      try {
-        const fileDataUrl = await readFileAsDataUrl(file);
-        const response = await postAction("replaceApprovedUploadFile", {
-          uploadId: button.dataset.id,
-          fileName: file.name,
-          fileDataUrl
-        });
-        state = normalizeState(response.state);
-        sanitizeSelections();
-        renderAll();
-        renderAdmin();
-      } catch (error) {
-        window.alert(error.message || "Die Datei konnte nicht ersetzt werden.");
       }
     });
   });
