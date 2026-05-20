@@ -16,6 +16,7 @@ let teacherSearchTerm = "";
 let adminTeacherFilter = "";
 let adminSubjectFilter = "";
 let adminClassFilter = "";
+let adminTeacherEditorId = "";
 let isLoadingState = false;
 let loadError = "";
 
@@ -54,6 +55,7 @@ const uploadClass = document.getElementById("uploadClass");
 const uploadMessage = document.getElementById("uploadMessage");
 const teacherForm = document.getElementById("teacherForm");
 const adminTeacherList = document.getElementById("adminTeacherList");
+const adminTeacherEditorSelect = document.getElementById("adminTeacherEditorSelect");
 const adminTeacherFilterSelect = document.getElementById("adminTeacherFilter");
 const adminSubjectFilterSelect = document.getElementById("adminSubjectFilter");
 const adminClassFilterSelect = document.getElementById("adminClassFilter");
@@ -75,6 +77,7 @@ classSelect.addEventListener("change", handleClassSelection);
 uploadTeacher.addEventListener("change", populateUploadSubjects);
 uploadForm.addEventListener("submit", handleUpload);
 teacherForm.addEventListener("submit", handleTeacherSave);
+adminTeacherEditorSelect.addEventListener("change", handleAdminTeacherEditorChange);
 adminTeacherFilterSelect.addEventListener("change", handleAdminTeacherFilterChange);
 adminSubjectFilterSelect.addEventListener("change", handleAdminSubjectFilterChange);
 adminClassFilterSelect.addEventListener("change", handleAdminClassFilterChange);
@@ -186,6 +189,10 @@ function sanitizeSelections() {
   if (adminTeacher && !adminTeacher.subjects.includes(adminSubjectFilter)) {
     adminSubjectFilter = "";
     adminClassFilter = "";
+  }
+
+  if (!state.teachers.some((teacher) => teacher.id === adminTeacherEditorId)) {
+    adminTeacherEditorId = "";
   }
 }
 
@@ -376,7 +383,6 @@ function populateUploadTeachers() {
 function populateUploadSubjects() {
   uploadSubject.innerHTML = "";
   const teacher = state.teachers.find((entry) => entry.id === uploadTeacher.value) || state.teachers[0];
-
   if (!teacher) {
     return;
   }
@@ -444,6 +450,9 @@ async function handleTeacherSave(event) {
   try {
     const response = await postAction("saveTeacher", { teacherId, name, code, subjects });
     state = normalizeState(response.state);
+    if (teacherId) {
+      adminTeacherEditorId = teacherId;
+    }
     sanitizeSelections();
     teacherForm.reset();
     document.getElementById("teacherEditId").value = "";
@@ -492,96 +501,83 @@ function renderAdminFilters() {
   adminClassFilterSelect.value = adminClassFilter;
 }
 
-function handleAdminTeacherFilterChange() {
-  adminTeacherFilter = adminTeacherFilterSelect.value;
-  adminSubjectFilter = "";
-  adminClassFilter = "";
-  renderAdmin();
-}
-
-function handleAdminSubjectFilterChange() {
-  adminSubjectFilter = adminSubjectFilterSelect.value;
-  adminClassFilter = "";
-  renderAdmin();
-}
-
-function handleAdminClassFilterChange() {
-  adminClassFilter = adminClassFilterSelect.value;
-  renderAdmin();
-}
-
 function renderAdminTeachers() {
   adminTeacherList.innerHTML = "";
+  adminTeacherEditorSelect.innerHTML = '<option value="">Lehrer auswählen</option>';
 
   if (!state.teachers.length) {
     adminTeacherList.textContent = "Noch keine Lehrer vorhanden.";
     return;
   }
 
-  state.teachers
+  const teachers = state.teachers
     .slice()
-    .sort((a, b) => a.code.localeCompare(b.code, "de"))
-    .forEach((teacher) => {
-      const item = document.createElement("article");
-      item.className = "admin-item";
-      item.innerHTML = `
-        <h4>${escapeHtml(teacher.name)} (${escapeHtml(teacher.code)})</h4>
-        <p class="meta-line">${escapeHtml(teacher.subjects.join(", "))}</p>
-        <div class="admin-actions">
-          <button type="button" class="ghost-btn" data-edit-teacher="${teacher.id}">Bearbeiten</button>
-          <button type="button" class="ghost-btn" data-delete-teacher="${teacher.id}">Löschen</button>
-        </div>
-      `;
-      adminTeacherList.appendChild(item);
-    });
+    .sort((a, b) => a.code.localeCompare(b.code, "de"));
 
-  adminTeacherList.querySelectorAll("[data-edit-teacher]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const teacher = state.teachers.find((entry) => entry.id === button.dataset.editTeacher);
-      if (!teacher) {
-        return;
-      }
-      document.getElementById("teacherEditId").value = teacher.id;
-      document.getElementById("teacherName").value = teacher.name;
-      document.getElementById("teacherCode").value = teacher.code;
-      document.getElementById("teacherSubjects").value = teacher.subjects.join(", ");
-      teacherForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
+  teachers.forEach((teacher) => {
+    const option = document.createElement("option");
+    option.value = teacher.id;
+    option.textContent = `${teacher.name} (${teacher.code})`;
+    adminTeacherEditorSelect.appendChild(option);
+  });
+  adminTeacherEditorSelect.value = adminTeacherEditorId;
+
+  if (!adminTeacherEditorId) {
+    adminTeacherList.textContent = "Bitte oben einen Lehrer zum Bearbeiten auswählen.";
+    return;
+  }
+
+  const teacher = teachers.find((entry) => entry.id === adminTeacherEditorId);
+  if (!teacher) {
+    adminTeacherList.textContent = "Der ausgewählte Lehrer wurde nicht gefunden.";
+    return;
+  }
+
+  const item = document.createElement("article");
+  item.className = "admin-item";
+  item.innerHTML = `
+    <h4>${escapeHtml(teacher.name)} (${escapeHtml(teacher.code)})</h4>
+    <p class="meta-line">${escapeHtml(teacher.subjects.join(", "))}</p>
+    <div class="admin-actions">
+      <button type="button" class="ghost-btn" data-edit-teacher="${teacher.id}">Bearbeiten</button>
+      <button type="button" class="ghost-btn" data-delete-teacher="${teacher.id}">Löschen</button>
+    </div>
+  `;
+  adminTeacherList.appendChild(item);
+
+  adminTeacherList.querySelector('[data-edit-teacher]')?.addEventListener("click", () => {
+    document.getElementById("teacherEditId").value = teacher.id;
+    document.getElementById("teacherName").value = teacher.name;
+    document.getElementById("teacherCode").value = teacher.code;
+    document.getElementById("teacherSubjects").value = teacher.subjects.join(", ");
+    teacherForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 
-  adminTeacherList.querySelectorAll("[data-delete-teacher]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const teacherId = button.dataset.deleteTeacher;
-      const teacher = state.teachers.find((entry) => entry.id === teacherId);
-      const confirmed = window.confirm(`Soll ${teacher?.name ?? "dieser Lehrer"} wirklich gelöscht werden?`);
-      if (!confirmed) {
-        return;
-      }
+  adminTeacherList.querySelector('[data-delete-teacher]')?.addEventListener("click", async () => {
+    const confirmed = window.confirm(`Soll ${teacher.name} wirklich gelöscht werden?`);
+    if (!confirmed) {
+      return;
+    }
 
-      try {
-        const response = await postAction("deleteTeacher", { teacherId });
-        state = normalizeState(response.state);
-        sanitizeSelections();
-        renderAll();
-        renderAdmin();
-      } catch (error) {
-        window.alert(error.message || "Der Lehrer konnte nicht gelöscht werden.");
-      }
-    });
+    try {
+      const response = await postAction("deleteTeacher", { teacherId: teacher.id });
+      state = normalizeState(response.state);
+      adminTeacherEditorId = "";
+      sanitizeSelections();
+      renderAll();
+      renderAdmin();
+    } catch (error) {
+      window.alert(error.message || "Der Lehrer konnte nicht gelöscht werden.");
+    }
   });
 }
 
 function renderPendingUploads() {
   pendingList.innerHTML = "";
 
-  if (!adminTeacherFilter || !adminSubjectFilter || !adminClassFilter) {
-    pendingList.textContent = "Bitte zuerst Lehrer, Fach und Klasse auswählen.";
-    return;
-  }
-
   const items = state.pendingUploads
-    .filter((item) => item.teacherId === adminTeacherFilter && item.subject === adminSubjectFilter && item.classLevel === adminClassFilter)
-    .sort(sortUploads);
+    .slice()
+    .sort(sortPendingUploadsOldestFirst);
 
   if (!items.length) {
     pendingList.textContent = "Zurzeit warten keine Uploads auf Prüfung.";
@@ -605,6 +601,10 @@ function renderPendingUploads() {
           <option value="Test" ${item.type === "Test" ? "selected" : ""}>Test</option>
         </select>
         <textarea rows="2" data-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
+      </div>
+      <div class="admin-actions">
+        <input type="file" data-file-input="pending" data-id="${item.id}">
+        <button type="button" class="ghost-btn" data-file-save="pending" data-id="${item.id}">Datei ersetzen</button>
       </div>
       <div class="admin-actions">
         <button type="button" class="primary-btn" data-approve="${item.id}">Freigeben</button>
@@ -667,6 +667,32 @@ function attachPendingUploadEvents() {
       }
     });
   });
+
+  pendingList.querySelectorAll('[data-file-save="pending"]').forEach((button) => {
+    button.addEventListener("click", async () => {
+      const input = pendingList.querySelector(`[data-file-input="pending"][data-id="${button.dataset.id}"]`);
+      const file = input?.files?.[0];
+      if (!file) {
+        window.alert("Bitte zuerst eine neue Datei auswählen.");
+        return;
+      }
+
+      try {
+        const fileDataUrl = await readFileAsDataUrl(file);
+        const response = await postAction("replacePendingUploadFile", {
+          uploadId: button.dataset.id,
+          fileName: file.name,
+          fileDataUrl
+        });
+        state = normalizeState(response.state);
+        sanitizeSelections();
+        renderAll();
+        renderAdmin();
+      } catch (error) {
+        window.alert(error.message || "Die Datei konnte nicht ersetzt werden.");
+      }
+    });
+  });
 }
 
 function renderApprovedUploads() {
@@ -704,6 +730,10 @@ function renderApprovedUploads() {
         </select>
         <input type="text" value="${escapeAttribute(item.subject)}" data-approved-field="subject" data-id="${item.id}">
         <textarea rows="2" data-approved-field="note" data-id="${item.id}">${escapeHtml(item.note ?? "")}</textarea>
+      </div>
+      <div class="admin-actions">
+        <input type="file" data-file-input="approved" data-id="${item.id}">
+        <button type="button" class="ghost-btn" data-file-save="approved" data-id="${item.id}">Datei ersetzen</button>
       </div>
       <div class="admin-actions">
         <button type="button" class="ghost-btn" data-unapprove="${item.id}">Zur Prüfung zurück</button>
@@ -766,6 +796,32 @@ function attachApprovedUploadEvents() {
       }
     });
   });
+
+  approvedList.querySelectorAll('[data-file-save="approved"]').forEach((button) => {
+    button.addEventListener("click", async () => {
+      const input = approvedList.querySelector(`[data-file-input="approved"][data-id="${button.dataset.id}"]`);
+      const file = input?.files?.[0];
+      if (!file) {
+        window.alert("Bitte zuerst eine neue Datei auswählen.");
+        return;
+      }
+
+      try {
+        const fileDataUrl = await readFileAsDataUrl(file);
+        const response = await postAction("replaceApprovedUploadFile", {
+          uploadId: button.dataset.id,
+          fileName: file.name,
+          fileDataUrl
+        });
+        state = normalizeState(response.state);
+        sanitizeSelections();
+        renderAll();
+        renderAdmin();
+      } catch (error) {
+        window.alert(error.message || "Die Datei konnte nicht ersetzt werden.");
+      }
+    });
+  });
 }
 
 function sortUploads(a, b) {
@@ -773,6 +829,10 @@ function sortUploads(a, b) {
     return a.type === "Klassenarbeit" ? -1 : 1;
   }
   return getSortableTimestamp(b) - getSortableTimestamp(a);
+}
+
+function sortPendingUploadsOldestFirst(a, b) {
+  return new Date(a.uploadedAt || 0) - new Date(b.uploadedAt || 0);
 }
 
 function openModal(modal) {
@@ -896,6 +956,29 @@ function handleClassSelection() {
   selectedClass = classSelect.value || null;
   selectedEntryId = null;
   renderAll();
+}
+
+function handleAdminTeacherEditorChange() {
+  adminTeacherEditorId = adminTeacherEditorSelect.value;
+  renderAdminTeachers();
+}
+
+function handleAdminTeacherFilterChange() {
+  adminTeacherFilter = adminTeacherFilterSelect.value;
+  adminSubjectFilter = "";
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminSubjectFilterChange() {
+  adminSubjectFilter = adminSubjectFilterSelect.value;
+  adminClassFilter = "";
+  renderAdmin();
+}
+
+function handleAdminClassFilterChange() {
+  adminClassFilter = adminClassFilterSelect.value;
+  renderAdmin();
 }
 
 function escapeHtml(value) {

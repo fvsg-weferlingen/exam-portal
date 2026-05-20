@@ -350,6 +350,14 @@ textarea:focus {
   margin-top: 14px;
 }
 
+.admin-single-select {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
 .admin-filter-grid,
 .inline-fields {
   display: grid;

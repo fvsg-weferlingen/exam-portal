@@ -194,6 +194,12 @@
             <button type="submit" class="primary-btn">Lehrer speichern</button>
           </div>
         </form>
+        <label class="admin-single-select">
+          Lehrer zum Bearbeiten
+          <select id="adminTeacherEditorSelect">
+            <option value="">Lehrer auswählen</option>
+          </select>
+        </label>
         <div id="adminTeacherList" class="admin-list"></div>
       </section>
 
@@ -201,6 +207,14 @@
         <div class="section-head">
           <h3>Uploads prüfen</h3>
           <p>Freigeben, bearbeiten oder löschen</p>
+        </div>
+        <div id="pendingList" class="admin-list"></div>
+      </section>
+
+      <section class="admin-section">
+        <div class="section-head">
+          <h3>Freigegebene Inhalte</h3>
+          <p>Auch freigegebene Einträge können bearbeitet oder gelöscht werden</p>
         </div>
         <div class="admin-filter-grid">
           <label>
@@ -215,14 +229,6 @@
             Klasse
             <select id="adminClassFilter"></select>
           </label>
-        </div>
-        <div id="pendingList" class="admin-list"></div>
-      </section>
-
-      <section class="admin-section">
-        <div class="section-head">
-          <h3>Freigegebene Inhalte</h3>
-          <p>Auch freigegebene Einträge können bearbeitet oder gelöscht werden</p>
         </div>
         <div id="approvedList" class="admin-list"></div>
       </section>
