@@ -69,6 +69,8 @@ async function handleAction(action, payload) {
           throw createError("Der ausgewählte Lehrer wurde nicht gefunden.");
         }
 
+        assertImageUpload(payload.fileName, payload.fileDataUrl);
+
         const savedFile = await saveUploadFile({
           fileName: payload.fileName,
           fileDataUrl: payload.fileDataUrl,
@@ -184,6 +186,8 @@ async function replaceUploadFile(collection, teachers, payload) {
     throw createError("Der zugehÃ¶rige Lehrer wurde nicht gefunden.");
   }
 
+  assertImageUpload(payload.fileName, payload.fileDataUrl);
+
   const savedFile = await saveUploadFile({
     fileName: payload.fileName,
     fileDataUrl: payload.fileDataUrl,
@@ -196,6 +200,33 @@ async function replaceUploadFile(collection, teachers, payload) {
   upload.fileName = String(payload.fileName || "").trim();
   upload.filePath = savedFile.path;
   upload.previewUrl = savedFile.previewUrl;
+}
+
+function assertImageUpload(fileName, fileDataUrl) {
+  const parsed = parseDataUrl(fileDataUrl);
+  if (!String(parsed.mimeType || "").toLowerCase().startsWith("image/")) {
+    throw createError("Zur Prüfung sind nur Bilddateien erlaubt.");
+  }
+
+  const lowerName = String(fileName || "").toLowerCase();
+  const hasImageExtension = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".avif", ".tif", ".tiff", ".heic", ".heif"]
+    .some((ending) => lowerName.endsWith(ending));
+
+  if (!hasImageExtension) {
+    throw createError("Zur Prüfung sind nur Bilddateien erlaubt.");
+  }
+}
+
+function parseDataUrl(dataUrl) {
+  const match = /^data:(.*?);base64,(.*)$/.exec(String(dataUrl || ""));
+  if (!match) {
+    throw createError("Ungültige Dateidaten.");
+  }
+
+  return {
+    mimeType: match[1],
+    base64Content: match[2]
+  };
 }
 
 function createError(message, statusCode = 400) {

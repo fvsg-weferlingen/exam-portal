@@ -350,6 +350,11 @@ async function handleUpload(event) {
     return;
   }
 
+  if (!isAllowedImageUpload(file)) {
+    uploadMessage.textContent = "Zur Prüfung können nur Bilddateien hochgeladen werden.";
+    return;
+  }
+
   uploadMessage.textContent = "Upload wird gespeichert...";
 
   try {
@@ -418,12 +423,20 @@ function hasApprovedEntriesForClass(classLevel) {
 
 function isImageFile(fileName) {
   const lowerName = String(fileName ?? "").toLowerCase();
-  return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"].some((ending) => lowerName.endsWith(ending));
+  return [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".avif", ".tif", ".tiff", ".heic", ".heif"].some((ending) => lowerName.endsWith(ending));
 }
 
 function isFramePreviewableFile(fileName, previewUrl) {
   const lowerName = String(fileName ?? "").toLowerCase();
   return Boolean(previewUrl) && [".pdf", ".txt", ".html"].some((ending) => lowerName.endsWith(ending));
+}
+
+function isAllowedImageUpload(file) {
+  const fileType = String(file?.type || "").toLowerCase();
+  if (fileType.startsWith("image/")) {
+    return true;
+  }
+  return isImageFile(file?.name);
 }
 
 function getSortableTimestamp(item) {

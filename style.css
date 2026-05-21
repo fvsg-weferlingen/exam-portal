@@ -268,14 +268,20 @@ textarea:focus {
   border-radius: 14px;
   overflow: hidden;
   background: #fff;
-  min-height: 220px;
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  padding: 16px;
 }
 
 .image-preview {
   display: block;
   width: 100%;
-  max-height: 75vh;
+  height: min(72vh, 820px);
+  max-width: 100%;
+  max-height: min(72vh, 820px);
   object-fit: contain;
+  object-position: center;
   background: #fff;
 }
 
