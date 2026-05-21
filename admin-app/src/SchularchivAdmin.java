@@ -21,6 +21,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.imageio.ImageIO;
+import java.awt.Desktop;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -81,6 +82,7 @@ public class SchularchivAdmin {
     private final JLabel pendingFileLabel = new JLabel("Keine Datei");
     private final JLabel pendingPreviewLabel = createPreviewLabel();
     private final JButton pendingDownloadButton = new JButton("Datei herunterladen");
+    private final JButton pendingOpenButton = new JButton("Datei öffnen");
 
     private final JComboBox<Teacher> approvedTeacherFilterCombo = new JComboBox<>(approvedTeacherFilterModel);
     private final JComboBox<String> approvedSubjectFilterCombo = new JComboBox<>(approvedSubjectFilterModel);
@@ -95,13 +97,19 @@ public class SchularchivAdmin {
     private final JLabel approvedFileLabel = new JLabel("Keine Datei");
     private final JLabel approvedPreviewLabel = createPreviewLabel();
     private final JButton approvedDownloadButton = new JButton("Datei herunterladen");
+    private final JButton approvedOpenButton = new JButton("Datei öffnen");
 
     public SchularchivAdmin(String apiBaseUrl) {
         this.apiClient = new ApiClient(apiBaseUrl);
         pendingDownloadButton.setEnabled(false);
         approvedDownloadButton.setEnabled(false);
+        pendingOpenButton.setEnabled(false);
+        approvedOpenButton.setEnabled(false);
         pendingDownloadButton.addActionListener(event -> downloadUploadFile(pendingList.getSelectedValue()));
         approvedDownloadButton.addActionListener(event -> downloadUploadFile(approvedList.getSelectedValue()));
+        pendingOpenButton.addActionListener(event -> openUploadFile(pendingList.getSelectedValue()));
+        approvedOpenButton.addActionListener(event -> openUploadFile(approvedList.getSelectedValue()));
+        log("Admin-App vorbereitet. API: " + apiBaseUrl);
     }
 
     public static void main(String[] args) {
@@ -181,7 +189,7 @@ public class SchularchivAdmin {
         });
 
         JPanel detail = buildUploadDetailPanel(
-            pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea, pendingFileLabel, pendingPreviewLabel, pendingDownloadButton,
+            pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea, pendingFileLabel, pendingPreviewLabel, pendingDownloadButton, pendingOpenButton,
             "Änderungen speichern", this::savePendingChanges,
             "Datei ersetzen", this::replacePendingFile,
             "Freigeben", this::approvePending,
@@ -215,7 +223,7 @@ public class SchularchivAdmin {
         filters.add(labeled("Klasse", approvedClassFilterCombo));
 
         JPanel detail = buildUploadDetailPanel(
-            approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea, approvedFileLabel, approvedPreviewLabel, approvedDownloadButton,
+            approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea, approvedFileLabel, approvedPreviewLabel, approvedDownloadButton, approvedOpenButton,
             "Änderungen speichern", this::saveApprovedChanges,
             "Datei ersetzen", this::replaceApprovedFile,
             "Zur Prüfung zurück", this::moveApprovedBack,
@@ -242,6 +250,7 @@ public class SchularchivAdmin {
         JLabel fileLabel,
         JLabel previewLabel,
         JButton downloadButton,
+        JButton openButton,
         String saveLabel,
         Runnable saveAction,
         String replaceFileLabel,
@@ -280,6 +289,8 @@ public class SchularchivAdmin {
         previewPanel.add(new JScrollPane(previewLabel), BorderLayout.CENTER);
         JPanel previewActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         previewActions.add(downloadButton);
+        previewActions.add(new JLabel("  "));
+        previewActions.add(openButton);
         previewPanel.add(previewActions, BorderLayout.SOUTH);
 
         JPanel centerPanel = new JPanel(new BorderLayout(0, 16));
@@ -327,6 +338,7 @@ public class SchularchivAdmin {
     }
 
     private void refreshStateAsync() {
+        log("Lade aktuellen Stand von der API ...");
         new SwingWorker<ArchiveState, Void>() {
             @Override
             protected ArchiveState doInBackground() throws Exception {
@@ -337,8 +349,10 @@ public class SchularchivAdmin {
             protected void done() {
                 try {
                     state = get();
+                    log("Stand geladen: " + state.teachers.size() + " Lehrer, " + state.pendingUploads.size() + " offene Uploads, " + state.approvedUploads.size() + " freigegebene Uploads.");
                     refreshAll();
                 } catch (Exception error) {
+                    log("Fehler beim Laden: " + error.getMessage());
                     showError("Daten konnten nicht geladen werden: " + error.getMessage());
                 }
             }
@@ -515,6 +529,7 @@ public class SchularchivAdmin {
         pendingNoteArea.setText(entry.note);
         pendingFileLabel.setText(entry.fileName);
         pendingDownloadButton.setEnabled(!entry.previewUrl.isBlank());
+        pendingOpenButton.setEnabled(!entry.previewUrl.isBlank());
         loadPreviewAsync(entry, pendingPreviewLabel);
     }
 
@@ -527,6 +542,7 @@ public class SchularchivAdmin {
         pendingNoteArea.setText("");
         pendingFileLabel.setText("Keine Datei");
         pendingDownloadButton.setEnabled(false);
+        pendingOpenButton.setEnabled(false);
         clearPreview(pendingPreviewLabel);
     }
 
@@ -595,6 +611,7 @@ public class SchularchivAdmin {
         approvedNoteArea.setText(entry.note);
         approvedFileLabel.setText(entry.fileName);
         approvedDownloadButton.setEnabled(!entry.previewUrl.isBlank());
+        approvedOpenButton.setEnabled(!entry.previewUrl.isBlank());
         loadPreviewAsync(entry, approvedPreviewLabel);
     }
 
@@ -607,6 +624,7 @@ public class SchularchivAdmin {
         approvedNoteArea.setText("");
         approvedFileLabel.setText("Keine Datei");
         approvedDownloadButton.setEnabled(false);
+        approvedOpenButton.setEnabled(false);
         clearPreview(approvedPreviewLabel);
     }
 
@@ -709,6 +727,7 @@ public class SchularchivAdmin {
             return;
         }
 
+        log("Lade Vorschau für: " + entry.fileName);
         targetLabel.setText("Bild wird geladen...");
         new SwingWorker<ImageIcon, Void>() {
             @Override
@@ -736,9 +755,11 @@ public class SchularchivAdmin {
                 try {
                     targetLabel.setText("");
                     targetLabel.setIcon(get());
+                    log("Vorschau geladen: " + entry.fileName);
                 } catch (Exception error) {
                     clearPreview(targetLabel);
                     targetLabel.setText("Diese Datei kann hier nicht als Bild angezeigt werden. Bitte herunterladen.");
+                    log("Vorschau nicht möglich: " + entry.fileName + " -> " + error.getMessage());
                 }
             }
         }.execute();
@@ -776,17 +797,11 @@ public class SchularchivAdmin {
         }
 
         Path target = chooser.getSelectedFile().toPath();
+        log("Starte Download: " + entry.fileName + " -> " + target);
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                HttpRequest request = HttpRequest.newBuilder(URI.create(entry.previewUrl)).GET().build();
-                HttpResponse<InputStream> response = apiClient.httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-                if (response.statusCode() >= 400) {
-                    throw new IOException("Datei konnte nicht heruntergeladen werden.");
-                }
-                try (InputStream stream = response.body()) {
-                    Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
-                }
+                downloadToTarget(entry, target);
                 return null;
             }
 
@@ -794,15 +809,73 @@ public class SchularchivAdmin {
             protected void done() {
                 try {
                     get();
+                    log("Download abgeschlossen: " + target);
                     JOptionPane.showMessageDialog(null, "Datei wurde gespeichert.");
                 } catch (Exception error) {
+                    log("Download fehlgeschlagen: " + error.getMessage());
                     showError("Download fehlgeschlagen: " + error.getMessage());
                 }
             }
         }.execute();
     }
 
+    private void openUploadFile(UploadEntry entry) {
+        if (entry == null || entry.previewUrl.isBlank()) {
+            showError("Für diesen Eintrag ist keine Datei verfügbar.");
+            return;
+        }
+        if (!Desktop.isDesktopSupported()) {
+            showError("Dateien können auf diesem System nicht direkt geöffnet werden.");
+            return;
+        }
+
+        log("Lade Datei zum Öffnen: " + entry.fileName);
+        new SwingWorker<Path, Void>() {
+            @Override
+            protected Path doInBackground() throws Exception {
+                Path tempFile = Files.createTempFile("schularchiv-", fileSuffix(entry.fileName));
+                downloadToTarget(entry, tempFile);
+                return tempFile;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    Path tempFile = get();
+                    log("Öffne lokale Datei: " + tempFile);
+                    Desktop.getDesktop().open(tempFile.toFile());
+                } catch (Exception error) {
+                    log("Öffnen fehlgeschlagen: " + error.getMessage());
+                    showError("Datei konnte nicht geöffnet werden: " + error.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private void downloadToTarget(UploadEntry entry, Path target) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(entry.previewUrl)).GET().build();
+        HttpResponse<InputStream> response = apiClient.httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        if (response.statusCode() >= 400) {
+            throw new IOException("Datei konnte nicht heruntergeladen werden.");
+        }
+        try (InputStream stream = response.body()) {
+            Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private String fileSuffix(String fileName) {
+        if (fileName == null) {
+            return ".tmp";
+        }
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
+            return ".tmp";
+        }
+        return fileName.substring(dotIndex);
+    }
+
     private void runActionAsync(String action, Map<String, Object> payload, Runnable onSuccess) {
+        log("Starte Aktion: " + action);
         new SwingWorker<ArchiveState, Void>() {
             @Override
             protected ArchiveState doInBackground() throws Exception {
@@ -813,11 +886,13 @@ public class SchularchivAdmin {
             protected void done() {
                 try {
                     state = get();
+                    log("Aktion erfolgreich: " + action);
                     if (onSuccess != null) {
                         onSuccess.run();
                     }
                     refreshAll();
                 } catch (Exception error) {
+                    log("Aktion fehlgeschlagen: " + action + " -> " + error.getMessage());
                     showError("Aktion fehlgeschlagen: " + error.getMessage());
                 }
             }
@@ -826,6 +901,10 @@ public class SchularchivAdmin {
 
     private boolean confirm(String message) {
         return JOptionPane.showConfirmDialog(null, message, "Bestätigen", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+    }
+
+    private void log(String message) {
+        System.out.println("[" + Instant.now() + "] " + message);
     }
 
     private void showError(String message) {
