@@ -267,10 +267,13 @@ public class SchularchivAdmin {
 
         noteArea.setLineWrap(true);
         noteArea.setWrapStyleWord(true);
+        noteArea.setRows(2);
 
         JPanel notePanel = new JPanel(new BorderLayout());
         notePanel.add(new JLabel("Hinweis"), BorderLayout.NORTH);
-        notePanel.add(new JScrollPane(noteArea), BorderLayout.CENTER);
+        JScrollPane noteScrollPane = new JScrollPane(noteArea);
+        noteScrollPane.setPreferredSize(new Dimension(360, 72));
+        notePanel.add(noteScrollPane, BorderLayout.CENTER);
 
         JPanel previewPanel = new JPanel(new BorderLayout(0, 8));
         previewPanel.add(new JLabel("Vorschau"), BorderLayout.NORTH);
@@ -279,9 +282,9 @@ public class SchularchivAdmin {
         previewActions.add(downloadButton);
         previewPanel.add(previewActions, BorderLayout.SOUTH);
 
-        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 0, 16));
-        centerPanel.add(notePanel);
-        centerPanel.add(previewPanel);
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 16));
+        centerPanel.add(notePanel, BorderLayout.NORTH);
+        centerPanel.add(previewPanel, BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton saveButton = new JButton(saveLabel);
@@ -705,10 +708,6 @@ public class SchularchivAdmin {
             targetLabel.setText("Keine Vorschau verfÃ¼gbar");
             return;
         }
-        if (!isImageFile(entry.fileName)) {
-            targetLabel.setText("FÃ¼r diesen Dateityp gibt es hier keine Bildvorschau. Bitte herunterladen.");
-            return;
-        }
 
         targetLabel.setText("Bild wird geladen...");
         new SwingWorker<ImageIcon, Void>() {
@@ -719,10 +718,14 @@ public class SchularchivAdmin {
                 if (response.statusCode() >= 400) {
                     throw new IOException("Vorschau konnte nicht geladen werden.");
                 }
+                String contentType = response.headers().firstValue("content-type").orElse("").toLowerCase(Locale.ROOT);
+                if (!contentType.startsWith("image/")) {
+                    throw new IOException("Keine Bilddatei");
+                }
                 try (InputStream stream = response.body()) {
                     BufferedImage image = ImageIO.read(stream);
                     if (image == null) {
-                        throw new IOException("Bildvorschau konnte nicht gelesen werden.");
+                        throw new IOException("Bildformat wird von Java hier nicht direkt unterstÃ¼tzt.");
                     }
                     return new ImageIcon(scaleImage(image, 720, 480));
                 }
@@ -735,7 +738,7 @@ public class SchularchivAdmin {
                     targetLabel.setIcon(get());
                 } catch (Exception error) {
                     clearPreview(targetLabel);
-                    targetLabel.setText("Vorschau konnte nicht geladen werden.");
+                    targetLabel.setText("Diese Datei kann hier nicht als Bild angezeigt werden. Bitte herunterladen.");
                 }
             }
         }.execute();
@@ -753,16 +756,6 @@ public class SchularchivAdmin {
         int scaledWidth = Math.max(1, (int) Math.round(width * ratio));
         int scaledHeight = Math.max(1, (int) Math.round(height * ratio));
         return image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
-    }
-
-    private boolean isImageFile(String fileName) {
-        String lower = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
-        return lower.endsWith(".png")
-            || lower.endsWith(".jpg")
-            || lower.endsWith(".jpeg")
-            || lower.endsWith(".gif")
-            || lower.endsWith(".webp")
-            || lower.endsWith(".bmp");
     }
 
     private void clearPreview(JLabel targetLabel) {
