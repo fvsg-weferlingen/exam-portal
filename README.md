@@ -82,3 +82,5 @@ Start unter Windows:
 ```powershell
 .\admin-app\run-admin.bat
 ```
+
+Das Programm verbindet sich direkt mit der Live-API und braucht daher kein manuelles `git pull`, damit neue Uploads sichtbar werden.

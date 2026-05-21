@@ -99,6 +99,11 @@ async function handleAction(action, payload) {
         updateUploadEntry(state.pendingUploads, payload.uploadId, payload.changes);
       });
 
+    case "replacePendingUploadFile":
+      return mutateState("Replace pending upload file", async (state) => {
+        await replaceUploadFile(state.pendingUploads, state.teachers, payload);
+      });
+
     case "approveUpload":
       return mutateState("Approve upload", (state) => {
         const upload = extractUpload(state.pendingUploads, payload.uploadId);
@@ -113,6 +118,11 @@ async function handleAction(action, payload) {
     case "updateApprovedUpload":
       return mutateState("Update approved upload", (state) => {
         updateUploadEntry(state.approvedUploads, payload.uploadId, payload.changes);
+      });
+
+    case "replaceApprovedUploadFile":
+      return mutateState("Replace approved upload file", async (state) => {
+        await replaceUploadFile(state.approvedUploads, state.teachers, payload);
       });
 
     case "moveBackToPending":
@@ -161,6 +171,31 @@ function removeUpload(collection, uploadId) {
     throw createError("Der Upload wurde nicht gefunden.");
   }
   collection.splice(index, 1);
+}
+
+async function replaceUploadFile(collection, teachers, payload) {
+  const upload = collection.find((entry) => entry.id === payload.uploadId);
+  if (!upload) {
+    throw createError("Der Upload wurde nicht gefunden.");
+  }
+
+  const teacher = teachers.find((entry) => entry.id === upload.teacherId);
+  if (!teacher) {
+    throw createError("Der zugehÃ¶rige Lehrer wurde nicht gefunden.");
+  }
+
+  const savedFile = await saveUploadFile({
+    fileName: payload.fileName,
+    fileDataUrl: payload.fileDataUrl,
+    teacherCode: teacher.code,
+    subject: upload.subject,
+    classLevel: upload.classLevel,
+    year: upload.year
+  });
+
+  upload.fileName = String(payload.fileName || "").trim();
+  upload.filePath = savedFile.path;
+  upload.previewUrl = savedFile.previewUrl;
 }
 
 function createError(message, statusCode = 400) {

@@ -1,6 +1,4 @@
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
@@ -19,29 +17,35 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 public class SchularchivAdmin {
     private static final String[] CLASS_LEVELS = {"5", "6", "7", "8", "9", "10", "11", "12"};
+    private static final String DEFAULT_API_BASE_URL = "https://exam-portal-plum-phi.vercel.app";
 
-    private final StateStore stateStore;
-    private State state;
+    private final ApiClient apiClient;
+    private ArchiveState state = ArchiveState.empty();
+
     private String adminTeacherFilter = "";
     private String adminSubjectFilter = "";
     private String adminClassFilter = "";
@@ -81,18 +85,16 @@ public class SchularchivAdmin {
     private final JTextArea approvedNoteArea = new JTextArea(4, 20);
     private final JLabel approvedFileLabel = new JLabel("Keine Datei");
 
-    public SchularchivAdmin(Path projectRoot) throws IOException {
-        this.stateStore = new StateStore(projectRoot);
-        this.stateStore.syncFromGit();
-        this.state = stateStore.load();
+    public SchularchivAdmin(String apiBaseUrl) {
+        this.apiClient = new ApiClient(apiBaseUrl);
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                Path projectRoot = Path.of(args.length > 0 ? args[0] : ".").toAbsolutePath().normalize();
-                SchularchivAdmin app = new SchularchivAdmin(projectRoot);
+                String apiBaseUrl = args.length > 0 ? args[0] : DEFAULT_API_BASE_URL;
+                SchularchivAdmin app = new SchularchivAdmin(apiBaseUrl);
                 app.show();
             } catch (Exception error) {
                 error.printStackTrace();
@@ -113,8 +115,8 @@ public class SchularchivAdmin {
         tabs.addTab("Freigegeben", buildApprovedPanel());
 
         frame.setContentPane(tabs);
-        refreshAll();
         frame.setVisible(true);
+        refreshStateAsync();
     }
 
     private JPanel buildTeacherPanel() {
@@ -147,12 +149,11 @@ public class SchularchivAdmin {
         saveButton.addActionListener(event -> saveTeacher());
         deleteButton.addActionListener(event -> deleteTeacher());
 
-        JPanel container = new JPanel();
-        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
-        container.add(form);
-        container.add(Box.createVerticalStrut(16));
-        container.add(actions);
-        return wrapScrollable(container);
+        JPanel container = new JPanel(new BorderLayout(0, 16));
+        container.add(form, BorderLayout.NORTH);
+        container.add(actions, BorderLayout.SOUTH);
+        panel.add(container, BorderLayout.NORTH);
+        return panel;
     }
 
     private JPanel buildPendingPanel() {
@@ -277,17 +278,30 @@ public class SchularchivAdmin {
         return panel;
     }
 
-    private JPanel wrapScrollable(JPanel content) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JScrollPane(content), BorderLayout.CENTER);
-        return panel;
-    }
-
     private JPanel labeled(String text, JComboBox<?> comboBox) {
         JPanel panel = new JPanel(new BorderLayout(0, 6));
         panel.add(new JLabel(text), BorderLayout.NORTH);
         panel.add(comboBox, BorderLayout.CENTER);
         return panel;
+    }
+
+    private void refreshStateAsync() {
+        new SwingWorker<ArchiveState, Void>() {
+            @Override
+            protected ArchiveState doInBackground() throws Exception {
+                return apiClient.loadState();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    state = get();
+                    refreshAll();
+                } catch (Exception error) {
+                    showError("Daten konnten nicht geladen werden: " + error.getMessage());
+                }
+            }
+        }.execute();
     }
 
     private void refreshAll() {
@@ -357,7 +371,7 @@ public class SchularchivAdmin {
         if (approvedSubjectFilterCombo.getSelectedItem() == null) {
             approvedSubjectFilterCombo.setSelectedItem("");
         }
-        adminSubjectFilter = String.valueOf(approvedSubjectFilterCombo.getSelectedItem());
+        adminSubjectFilter = valueOrEmpty((String) approvedSubjectFilterCombo.getSelectedItem());
 
         String previousClass = (String) approvedClassFilterCombo.getSelectedItem();
         approvedClassFilterModel.removeAllElements();
@@ -369,7 +383,7 @@ public class SchularchivAdmin {
         if (approvedClassFilterCombo.getSelectedItem() == null) {
             approvedClassFilterCombo.setSelectedItem("");
         }
-        adminClassFilter = String.valueOf(approvedClassFilterCombo.getSelectedItem());
+        adminClassFilter = valueOrEmpty((String) approvedClassFilterCombo.getSelectedItem());
 
         refreshApprovedList();
     }
@@ -420,25 +434,18 @@ public class SchularchivAdmin {
             return;
         }
 
-        Teacher selected = (Teacher) teacherEditorCombo.getSelectedItem();
-        for (Teacher teacher : state.teachers) {
-            if (teacher.code.equals(code) && (selected == null || !teacher.id.equals(selected.id))) {
-                showError("Dieses Kürzel gibt es bereits.");
-                return;
+        String teacherId = adminTeacherEditorId;
+        runActionAsync("saveTeacher", Map.of(
+            "teacherId", teacherId,
+            "name", name,
+            "code", code,
+            "subjects", subjects
+        ), () -> {
+            if (teacherId.isBlank()) {
+                Teacher created = state.findTeacherByCode(code);
+                adminTeacherEditorId = created == null ? "" : created.id;
             }
-        }
-
-        if (selected == null) {
-            state.teachers.add(new Teacher(UUID.randomUUID().toString(), name, code, subjects));
-        } else {
-            selected.name = name;
-            selected.code = code;
-            selected.subjects = subjects;
-        }
-
-        persist("Teacher gespeichert");
-        adminTeacherEditorId = selected == null ? findTeacherByCode(code).id : selected.id;
-        refreshAll();
+        });
     }
 
     private void deleteTeacher() {
@@ -447,18 +454,11 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen Lehrer auswählen.");
             return;
         }
-        if (state.isTeacherUsed(selected.id)) {
-            showError("Dieser Lehrer wird noch in Uploads verwendet und kann nicht gelöscht werden.");
-            return;
-        }
         if (!confirm("Soll " + selected.name + " wirklich gelöscht werden?")) {
             return;
         }
 
-        state.teachers.removeIf(teacher -> teacher.id.equals(selected.id));
-        adminTeacherEditorId = "";
-        persist("Teacher gelöscht");
-        refreshAll();
+        runActionAsync("deleteTeacher", Map.of("teacherId", selected.id), () -> adminTeacherEditorId = "");
     }
 
     private void loadPendingIntoForm(UploadEntry entry) {
@@ -491,9 +491,10 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen Upload auswählen.");
             return;
         }
-        applyUploadForm(entry, pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea);
-        persist("Prüfungs-Upload geändert");
-        refreshAll();
+        runActionAsync("updatePendingUpload", Map.of(
+            "uploadId", entry.id,
+            "changes", uploadChangesMap(pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea)
+        ), null);
     }
 
     private void replacePendingFile() {
@@ -502,9 +503,17 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen Upload auswählen.");
             return;
         }
-        replaceUploadFile(entry);
-        persist("Prüfungs-Upload Datei ersetzt");
-        refreshAll();
+
+        FilePayload filePayload = chooseFilePayload();
+        if (filePayload == null) {
+            return;
+        }
+
+        runActionAsync("replacePendingUploadFile", Map.of(
+            "uploadId", entry.id,
+            "fileName", filePayload.fileName,
+            "fileDataUrl", filePayload.dataUrl
+        ), null);
     }
 
     private void approvePending() {
@@ -513,10 +522,7 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen Upload auswählen.");
             return;
         }
-        state.pendingUploads.remove(entry);
-        state.approvedUploads.add(entry);
-        persist("Upload freigegeben");
-        refreshAll();
+        runActionAsync("approveUpload", Map.of("uploadId", entry.id), null);
     }
 
     private void rejectPending() {
@@ -528,9 +534,7 @@ public class SchularchivAdmin {
         if (!confirm("Soll dieser Upload wirklich gelöscht werden?")) {
             return;
         }
-        state.pendingUploads.remove(entry);
-        persist("Upload gelöscht");
-        refreshAll();
+        runActionAsync("rejectUpload", Map.of("uploadId", entry.id), null);
     }
 
     private void loadApprovedIntoForm(UploadEntry entry) {
@@ -563,9 +567,10 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen freigegebenen Eintrag auswählen.");
             return;
         }
-        applyUploadForm(entry, approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea);
-        persist("Freigegebener Eintrag geändert");
-        refreshAll();
+        runActionAsync("updateApprovedUpload", Map.of(
+            "uploadId", entry.id,
+            "changes", uploadChangesMap(approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea)
+        ), null);
     }
 
     private void replaceApprovedFile() {
@@ -574,9 +579,17 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen freigegebenen Eintrag auswählen.");
             return;
         }
-        replaceUploadFile(entry);
-        persist("Freigegebene Datei ersetzt");
-        refreshAll();
+
+        FilePayload filePayload = chooseFilePayload();
+        if (filePayload == null) {
+            return;
+        }
+
+        runActionAsync("replaceApprovedUploadFile", Map.of(
+            "uploadId", entry.id,
+            "fileName", filePayload.fileName,
+            "fileDataUrl", filePayload.dataUrl
+        ), null);
     }
 
     private void moveApprovedBack() {
@@ -585,10 +598,7 @@ public class SchularchivAdmin {
             showError("Bitte zuerst einen freigegebenen Eintrag auswählen.");
             return;
         }
-        state.approvedUploads.remove(entry);
-        state.pendingUploads.add(entry);
-        persist("Freigegebener Eintrag zurückgestellt");
-        refreshAll();
+        runActionAsync("moveBackToPending", Map.of("uploadId", entry.id), null);
     }
 
     private void deleteApproved() {
@@ -600,13 +610,10 @@ public class SchularchivAdmin {
         if (!confirm("Soll dieser freigegebene Eintrag wirklich gelöscht werden?")) {
             return;
         }
-        state.approvedUploads.remove(entry);
-        persist("Freigegebener Eintrag gelöscht");
-        refreshAll();
+        runActionAsync("deleteApprovedUpload", Map.of("uploadId", entry.id), null);
     }
 
-    private void applyUploadForm(
-        UploadEntry entry,
+    private Map<String, Object> uploadChangesMap(
         JTextField titleField,
         JTextField yearField,
         JTextField classField,
@@ -614,60 +621,58 @@ public class SchularchivAdmin {
         JComboBox<String> typeCombo,
         JTextArea noteArea
     ) {
-        entry.title = titleField.getText().trim();
-        entry.year = yearField.getText().trim();
-        entry.classLevel = classField.getText().trim();
-        entry.subject = subjectField.getText().trim();
-        entry.type = String.valueOf(typeCombo.getSelectedItem());
-        entry.note = noteArea.getText().trim();
+        Map<String, Object> changes = new LinkedHashMap<>();
+        changes.put("title", titleField.getText().trim());
+        changes.put("year", yearField.getText().trim());
+        changes.put("classLevel", classField.getText().trim());
+        changes.put("subject", subjectField.getText().trim());
+        changes.put("type", String.valueOf(typeCombo.getSelectedItem()));
+        changes.put("note", noteArea.getText().trim());
+        return changes;
     }
 
-    private void replaceUploadFile(UploadEntry entry) {
+    private FilePayload chooseFilePayload() {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
-            return;
+            return null;
         }
 
-        Teacher teacher = state.findTeacher(entry.teacherId);
-        if (teacher == null) {
-            showError("Der zugehörige Lehrer wurde nicht gefunden.");
-            return;
-        }
-
+        Path path = chooser.getSelectedFile().toPath();
         try {
-            Path target = stateStore.copyUploadFile(chooser.getSelectedFile().toPath(), teacher.code, entry.subject, entry.classLevel, entry.year);
-            entry.fileName = chooser.getSelectedFile().getName();
-            entry.filePath = stateStore.relativeToProject(target).replace('\\', '/');
-            entry.previewUrl = stateStore.buildPreviewUrl(entry.filePath);
+            String fileName = chooser.getSelectedFile().getName();
+            String mimeType = detectMimeType(path);
+            String base64 = Base64.getEncoder().encodeToString(Files.readAllBytes(path));
+            return new FilePayload(fileName, "data:" + mimeType + ";base64," + base64);
         } catch (IOException error) {
             throw new RuntimeException(error);
         }
     }
 
-    private void persist(String successMessage) {
-        try {
-            stateStore.save(state);
-            stateStore.syncToGit(successMessage);
-            stateStore.syncFromGit();
-            state = stateStore.load();
-        } catch (IOException error) {
-            throw new RuntimeException(error);
-        }
+    private String detectMimeType(Path path) throws IOException {
+        String mimeType = Files.probeContentType(path);
+        return mimeType == null ? "application/octet-stream" : mimeType;
     }
 
-    private Teacher findTeacherByCode(String code) {
-        return state.teachers.stream().filter(teacher -> teacher.code.equals(code)).findFirst().orElseThrow();
-    }
-
-    private List<String> splitSubjects(String raw) {
-        List<String> subjects = new ArrayList<>();
-        for (String value : raw.split(",")) {
-            String trimmed = value.trim();
-            if (!trimmed.isEmpty()) {
-                subjects.add(trimmed);
+    private void runActionAsync(String action, Map<String, Object> payload, Runnable onSuccess) {
+        new SwingWorker<ArchiveState, Void>() {
+            @Override
+            protected ArchiveState doInBackground() throws Exception {
+                return apiClient.runAction(action, payload);
             }
-        }
-        return subjects;
+
+            @Override
+            protected void done() {
+                try {
+                    state = get();
+                    if (onSuccess != null) {
+                        onSuccess.run();
+                    }
+                    refreshAll();
+                } catch (Exception error) {
+                    showError("Aktion fehlgeschlagen: " + error.getMessage());
+                }
+            }
+        }.execute();
     }
 
     private boolean confirm(String message) {
@@ -679,10 +684,10 @@ public class SchularchivAdmin {
     }
 
     private void selectTeacherInCombo(JComboBox<Teacher> comboBox, String teacherId) {
-        for (int i = 0; i < comboBox.getItemCount(); i++) {
-            Teacher teacher = comboBox.getItemAt(i);
+        for (int index = 0; index < comboBox.getItemCount(); index++) {
+            Teacher teacher = comboBox.getItemAt(index);
             if (teacher != null && teacher.id.equals(teacherId)) {
-                comboBox.setSelectedIndex(i);
+                comboBox.setSelectedIndex(index);
                 return;
             }
         }
@@ -711,6 +716,27 @@ public class SchularchivAdmin {
         return value == null ? "" : value;
     }
 
+    private List<String> splitSubjects(String raw) {
+        List<String> subjects = new ArrayList<>();
+        for (String value : raw.split(",")) {
+            String trimmed = value.trim();
+            if (!trimmed.isEmpty()) {
+                subjects.add(trimmed);
+            }
+        }
+        return subjects;
+    }
+
+    private static final class FilePayload {
+        private final String fileName;
+        private final String dataUrl;
+
+        private FilePayload(String fileName, String dataUrl) {
+            this.fileName = fileName;
+            this.dataUrl = dataUrl;
+        }
+    }
+
     private static final class UploadRenderer extends DefaultListCellRenderer {
         @Override
         public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -722,163 +748,64 @@ public class SchularchivAdmin {
         }
     }
 
-    private static final class StateStore {
-        private final Path projectRoot;
-        private final Path statePath;
+    private static final class ApiClient {
+        private final HttpClient httpClient = HttpClient.newHttpClient();
+        private final String baseUrl;
 
-        private StateStore(Path projectRoot) {
-            this.projectRoot = projectRoot;
-            this.statePath = projectRoot.resolve("data").resolve("state.json");
+        private ApiClient(String baseUrl) {
+          this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         }
 
-        private State load() throws IOException {
-            if (!Files.exists(statePath)) {
-                Files.createDirectories(statePath.getParent());
-                State empty = State.empty();
-                save(empty);
-                return empty;
+        private ArchiveState loadState() throws IOException, InterruptedException {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/state")).GET().build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() >= 400) {
+                throw new IOException(response.body());
             }
-            String json = Files.readString(statePath, StandardCharsets.UTF_8);
-            Object parsed = Json.parse(json);
-            return State.fromMap((Map<String, Object>) parsed);
+            return ArchiveState.fromMap((Map<String, Object>) Json.parse(response.body()));
         }
 
-        private void save(State state) throws IOException {
-            Files.createDirectories(statePath.getParent());
-            Files.writeString(statePath, Json.stringify(state.toMap()), StandardCharsets.UTF_8);
-        }
+        private ArchiveState runAction(String action, Map<String, Object> payload) throws IOException, InterruptedException {
+            Map<String, Object> requestBody = new LinkedHashMap<>();
+            requestBody.put("action", action);
+            requestBody.put("payload", payload);
 
-        private void syncFromGit() throws IOException {
-            runGitCommand("git", "pull", "origin", "main", "--no-rebase");
-        }
+            HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/action"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(Json.stringify(requestBody), StandardCharsets.UTF_8))
+                .build();
 
-        private void syncToGit(String message) throws IOException {
-            runGitCommand("git", "add", "data/state.json", "uploads");
-            runGitCommandAllowingNoChanges("git", "commit", "-m", message);
-            runGitCommand("git", "push");
-        }
-
-        private Path copyUploadFile(Path source, String teacherCode, String subject, String classLevel, String year) throws IOException {
-            String extension = getExtension(source.getFileName().toString());
-            String safeTeacher = slugify(teacherCode);
-            String safeSubject = slugify(subject);
-            String safeName = slugify(stripExtension(source.getFileName().toString()));
-            String timestamp = Instant.now().toString().replace(":", "-");
-            Path targetDir = projectRoot.resolve("uploads").resolve(year).resolve(safeTeacher).resolve(safeSubject);
-            Files.createDirectories(targetDir);
-            Path target = targetDir.resolve(timestamp + "-" + safeName + extension);
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-            return target;
-        }
-
-        private String buildPreviewUrl(String relativePath) {
-            String remote = detectRemoteUrl();
-            String branch = detectBranch();
-            if (remote == null || branch == null) {
-                return relativePath;
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() >= 400) {
+                throw new IOException(response.body());
             }
-            String cleaned = remote.replace("https://github.com/", "").replace(".git", "");
-            return "https://raw.githubusercontent.com/" + cleaned + "/" + branch + "/" + relativePath;
-        }
 
-        private String relativeToProject(Path path) {
-            return projectRoot.relativize(path.toAbsolutePath().normalize()).toString();
-        }
-
-        private String detectRemoteUrl() {
-            try {
-                Process process = new ProcessBuilder("git", "remote", "get-url", "origin").directory(projectRoot.toFile()).start();
-                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-                process.waitFor();
-                return output.isBlank() ? null : output;
-            } catch (Exception error) {
-                return null;
-            }
-        }
-
-        private String detectBranch() {
-            try {
-                Process process = new ProcessBuilder("git", "branch", "--show-current").directory(projectRoot.toFile()).start();
-                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-                process.waitFor();
-                return output.isBlank() ? "main" : output;
-            } catch (Exception error) {
-                return "main";
-            }
-        }
-
-        private String slugify(String value) {
-            return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", "-").replaceAll("^-+|-+$", "");
-        }
-
-        private String stripExtension(String name) {
-            int dot = name.lastIndexOf('.');
-            return dot >= 0 ? name.substring(0, dot) : name;
-        }
-
-        private String getExtension(String name) {
-            int dot = name.lastIndexOf('.');
-            return dot >= 0 ? name.substring(dot) : "";
-        }
-
-        private void runGitCommand(String... command) throws IOException {
-            try {
-                Process process = new ProcessBuilder(command).directory(projectRoot.toFile()).redirectErrorStream(true).start();
-                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-                int exitCode = process.waitFor();
-                if (exitCode != 0) {
-                    throw new IOException(output.isBlank() ? "Git-Befehl fehlgeschlagen." : output);
-                }
-            } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Git-Befehl wurde unterbrochen.", error);
-            }
-        }
-
-        private void runGitCommandAllowingNoChanges(String... command) throws IOException {
-            try {
-                Process process = new ProcessBuilder(command).directory(projectRoot.toFile()).redirectErrorStream(true).start();
-                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
-                int exitCode = process.waitFor();
-                if (exitCode != 0 && !output.contains("nothing to commit")) {
-                    throw new IOException(output.isBlank() ? "Git-Befehl fehlgeschlagen." : output);
-                }
-            } catch (InterruptedException error) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Git-Befehl wurde unterbrochen.", error);
-            }
+            Map<String, Object> parsed = (Map<String, Object>) Json.parse(response.body());
+            return ArchiveState.fromMap((Map<String, Object>) parsed.get("state"));
         }
     }
 
-    private static final class State {
+    private static final class ArchiveState {
         private final List<Teacher> teachers;
         private final List<UploadEntry> pendingUploads;
         private final List<UploadEntry> approvedUploads;
 
-        private State(List<Teacher> teachers, List<UploadEntry> pendingUploads, List<UploadEntry> approvedUploads) {
+        private ArchiveState(List<Teacher> teachers, List<UploadEntry> pendingUploads, List<UploadEntry> approvedUploads) {
             this.teachers = teachers;
             this.pendingUploads = pendingUploads;
             this.approvedUploads = approvedUploads;
         }
 
-        private static State empty() {
-            return new State(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        private static ArchiveState empty() {
+            return new ArchiveState(new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
         }
 
-        private static State fromMap(Map<String, Object> map) {
-            return new State(
+        private static ArchiveState fromMap(Map<String, Object> map) {
+            return new ArchiveState(
                 Teacher.fromList((List<Object>) map.getOrDefault("teachers", List.of())),
                 UploadEntry.fromList((List<Object>) map.getOrDefault("pendingUploads", List.of())),
                 UploadEntry.fromList((List<Object>) map.getOrDefault("approvedUploads", List.of()))
             );
-        }
-
-        private Map<String, Object> toMap() {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("teachers", teachers.stream().map(Teacher::toMap).toList());
-            map.put("pendingUploads", pendingUploads.stream().map(UploadEntry::toMap).toList());
-            map.put("approvedUploads", approvedUploads.stream().map(UploadEntry::toMap).toList());
-            return map;
         }
 
         private List<Teacher> teachersSorted() {
@@ -896,13 +823,8 @@ public class SchularchivAdmin {
                 .toList();
         }
 
-        private boolean isTeacherUsed(String teacherId) {
-            return pendingUploads.stream().anyMatch(entry -> entry.teacherId.equals(teacherId))
-                || approvedUploads.stream().anyMatch(entry -> entry.teacherId.equals(teacherId));
-        }
-
-        private Teacher findTeacher(String teacherId) {
-            return teachers.stream().filter(teacher -> teacher.id.equals(teacherId)).findFirst().orElse(null);
+        private Teacher findTeacherByCode(String code) {
+            return teachers.stream().filter(teacher -> teacher.code.equals(code)).findFirst().orElse(null);
         }
     }
 
@@ -931,15 +853,6 @@ public class SchularchivAdmin {
                 ));
             }
             return teachers;
-        }
-
-        private Map<String, Object> toMap() {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", id);
-            map.put("name", name);
-            map.put("code", code);
-            map.put("subjects", new ArrayList<>(subjects));
-            return map;
         }
 
         @Override
@@ -993,27 +906,10 @@ public class SchularchivAdmin {
                     String.valueOf(map.getOrDefault("fileName", "")),
                     String.valueOf(map.getOrDefault("filePath", "")),
                     String.valueOf(map.getOrDefault("previewUrl", "")),
-                    String.valueOf(map.getOrDefault("uploadedAt", ""))
+                    String.valueOf(map.getOrDefault("uploadedAt", Instant.EPOCH.toString()))
                 ));
             }
             return uploads;
-        }
-
-        private Map<String, Object> toMap() {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", id);
-            map.put("teacherId", teacherId);
-            map.put("subject", subject);
-            map.put("classLevel", classLevel);
-            map.put("type", type);
-            map.put("year", year);
-            map.put("title", title);
-            map.put("note", note);
-            map.put("fileName", fileName);
-            map.put("filePath", filePath);
-            map.put("previewUrl", previewUrl);
-            map.put("uploadedAt", uploadedAt);
-            return map;
         }
     }
 
