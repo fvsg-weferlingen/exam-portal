@@ -83,6 +83,7 @@ public class SchularchivAdmin {
 
     public SchularchivAdmin(Path projectRoot) throws IOException {
         this.stateStore = new StateStore(projectRoot);
+        this.stateStore.syncFromGit();
         this.state = stateStore.load();
     }
 
@@ -646,6 +647,9 @@ public class SchularchivAdmin {
     private void persist(String successMessage) {
         try {
             stateStore.save(state);
+            stateStore.syncToGit(successMessage);
+            stateStore.syncFromGit();
+            state = stateStore.load();
         } catch (IOException error) {
             throw new RuntimeException(error);
         }
@@ -744,6 +748,16 @@ public class SchularchivAdmin {
             Files.writeString(statePath, Json.stringify(state.toMap()), StandardCharsets.UTF_8);
         }
 
+        private void syncFromGit() throws IOException {
+            runGitCommand("git", "pull", "origin", "main", "--no-rebase");
+        }
+
+        private void syncToGit(String message) throws IOException {
+            runGitCommand("git", "add", "data/state.json", "uploads");
+            runGitCommandAllowingNoChanges("git", "commit", "-m", message);
+            runGitCommand("git", "push");
+        }
+
         private Path copyUploadFile(Path source, String teacherCode, String subject, String classLevel, String year) throws IOException {
             String extension = getExtension(source.getFileName().toString());
             String safeTeacher = slugify(teacherCode);
@@ -805,6 +819,34 @@ public class SchularchivAdmin {
         private String getExtension(String name) {
             int dot = name.lastIndexOf('.');
             return dot >= 0 ? name.substring(dot) : "";
+        }
+
+        private void runGitCommand(String... command) throws IOException {
+            try {
+                Process process = new ProcessBuilder(command).directory(projectRoot.toFile()).redirectErrorStream(true).start();
+                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+                int exitCode = process.waitFor();
+                if (exitCode != 0) {
+                    throw new IOException(output.isBlank() ? "Git-Befehl fehlgeschlagen." : output);
+                }
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Git-Befehl wurde unterbrochen.", error);
+            }
+        }
+
+        private void runGitCommandAllowingNoChanges(String... command) throws IOException {
+            try {
+                Process process = new ProcessBuilder(command).directory(projectRoot.toFile()).redirectErrorStream(true).start();
+                String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+                int exitCode = process.waitFor();
+                if (exitCode != 0 && !output.contains("nothing to commit")) {
+                    throw new IOException(output.isBlank() ? "Git-Befehl fehlgeschlagen." : output);
+                }
+            } catch (InterruptedException error) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Git-Befehl wurde unterbrochen.", error);
+            }
         }
     }
 
