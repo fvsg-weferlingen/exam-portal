@@ -17,6 +17,8 @@ Die Website speichert Daten jetzt ueber eine Server-API direkt in GitHub:
 - `api/state.js`
 - `api/action.js`
 - `api/_lib/github-store.js`
+- `admin-app/src/SchularchivAdmin.java`
+- `admin-app/run-admin.bat`
 
 ## Funktionen
 
@@ -69,4 +71,14 @@ Erstelle auf GitHub einen Personal Access Token mit Rechten fuer das Repository,
 
 ```powershell
 npm run check
+```
+
+## Java-Adminprogramm
+
+Das Admincenter liegt jetzt als separates Java-Programm vor.
+
+Start unter Windows:
+
+```powershell
+.\admin-app\run-admin.bat
 ```

@@ -1,4 +1,4 @@
-		<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
@@ -32,16 +32,15 @@
           <p class="eyebrow">Freiherr vom Stein Gymnasium Weferlingen</p>
           <h1>Schularchiv</h1>
         </div>
-        <button id="adminAccessBtn" class="ghost-btn">Upload Überprüfung</button>
       </header>
 
       <section class="hero-panel">
         <div>
           <p class="badge">Wie funktioniert es?</p>
-          <h2>Suche nach einem Lehrer, indem du entweder den Namen eingibst oder den Kürzel. Danach wähle das Fach und die Klasse aus. Ob Test und Klassenarbeiten vorhanden liegt daran ob Schüler was geteilt haben.</h2>
-          <p>Einfach Test und Klassenarbeiten über den "Hochladen" Button Uploaden und für alle zugägnlich machen. Namen und persönliche Daten werden unkenntlich gemacht!</p>
+          <h2>Suche nach einem Lehrer über Namen oder Kürzel. Danach wähle Fach und Klasse aus und öffne direkt die passende Vorschau.</h2>
+          <p>Über den Upload-Button können Schüler Inhalte einreichen. Freigaben und Lehrer-Verwaltung laufen jetzt über das separate Java-Adminprogramm.</p>
         </div>
-        <button id="openUploadBtn" class="primary-btn">Hochladen	</button>
+        <button id="openUploadBtn" class="primary-btn">Hochladen</button>
       </section>
 
       <section class="panel selector-panel">
@@ -158,80 +157,6 @@
         </div>
       </form>
       <p id="uploadMessage" class="message"></p>
-    </div>
-  </div>
-
-  <div id="adminModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-card admin-card">
-      <div class="modal-head">
-        <div>
-          <p class="badge">Admin</p>
-          <h2>Adminzentrale</h2>
-        </div>
-        <button class="icon-btn" data-close="adminModal" aria-label="Schließen">×</button>
-      </div>
-
-      <section class="admin-section">
-        <div class="section-head">
-          <h3>Lehrer verwalten</h3>
-          <p>Name, Kürzel und Fächer festlegen</p>
-        </div>
-        <form id="teacherForm" class="form-grid compact">
-          <input id="teacherEditId" type="hidden">
-          <label>
-            Lehrername
-            <input id="teacherName" type="text" placeholder="z. B. Herr Wagner" required>
-          </label>
-          <label>
-            Kürzel
-            <input id="teacherCode" type="text" placeholder="z. B. WAG" maxlength="10" required>
-          </label>
-          <label class="full-width">
-            Fächer
-            <input id="teacherSubjects" type="text" placeholder="z. B. Mathematik, Physik, Chemie" required>
-          </label>
-          <div class="full-width form-actions">
-            <button type="submit" class="primary-btn">Lehrer speichern</button>
-          </div>
-        </form>
-        <label class="admin-single-select">
-          Lehrer zum Bearbeiten
-          <select id="adminTeacherEditorSelect">
-            <option value="">Lehrer auswählen</option>
-          </select>
-        </label>
-        <div id="adminTeacherList" class="admin-list"></div>
-      </section>
-
-      <section class="admin-section">
-        <div class="section-head">
-          <h3>Uploads prüfen</h3>
-          <p>Freigeben, bearbeiten oder löschen</p>
-        </div>
-        <div id="pendingList" class="admin-list"></div>
-      </section>
-
-      <section class="admin-section">
-        <div class="section-head">
-          <h3>Freigegebene Inhalte</h3>
-          <p>Auch freigegebene Einträge können bearbeitet oder gelöscht werden</p>
-        </div>
-        <div class="admin-filter-grid">
-          <label>
-            Lehrer
-            <select id="adminTeacherFilter"></select>
-          </label>
-          <label>
-            Fach
-            <select id="adminSubjectFilter"></select>
-          </label>
-          <label>
-            Klasse
-            <select id="adminClassFilter"></select>
-          </label>
-        </div>
-        <div id="approvedList" class="admin-list"></div>
-      </section>
     </div>
   </div>
 
