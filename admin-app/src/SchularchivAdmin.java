@@ -2,6 +2,7 @@ import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -19,11 +20,16 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.imageio.ImageIO;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.GridLayout;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -31,6 +37,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -72,6 +79,8 @@ public class SchularchivAdmin {
     private final JComboBox<String> pendingTypeCombo = new JComboBox<>(new String[]{"Klassenarbeit", "Test"});
     private final JTextArea pendingNoteArea = new JTextArea(4, 20);
     private final JLabel pendingFileLabel = new JLabel("Keine Datei");
+    private final JLabel pendingPreviewLabel = createPreviewLabel();
+    private final JButton pendingDownloadButton = new JButton("Datei herunterladen");
 
     private final JComboBox<Teacher> approvedTeacherFilterCombo = new JComboBox<>(approvedTeacherFilterModel);
     private final JComboBox<String> approvedSubjectFilterCombo = new JComboBox<>(approvedSubjectFilterModel);
@@ -84,9 +93,15 @@ public class SchularchivAdmin {
     private final JComboBox<String> approvedTypeCombo = new JComboBox<>(new String[]{"Klassenarbeit", "Test"});
     private final JTextArea approvedNoteArea = new JTextArea(4, 20);
     private final JLabel approvedFileLabel = new JLabel("Keine Datei");
+    private final JLabel approvedPreviewLabel = createPreviewLabel();
+    private final JButton approvedDownloadButton = new JButton("Datei herunterladen");
 
     public SchularchivAdmin(String apiBaseUrl) {
         this.apiClient = new ApiClient(apiBaseUrl);
+        pendingDownloadButton.setEnabled(false);
+        approvedDownloadButton.setEnabled(false);
+        pendingDownloadButton.addActionListener(event -> downloadUploadFile(pendingList.getSelectedValue()));
+        approvedDownloadButton.addActionListener(event -> downloadUploadFile(approvedList.getSelectedValue()));
     }
 
     public static void main(String[] args) {
@@ -166,7 +181,7 @@ public class SchularchivAdmin {
         });
 
         JPanel detail = buildUploadDetailPanel(
-            pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea, pendingFileLabel,
+            pendingTitleField, pendingYearField, pendingClassField, pendingSubjectField, pendingTypeCombo, pendingNoteArea, pendingFileLabel, pendingPreviewLabel, pendingDownloadButton,
             "Änderungen speichern", this::savePendingChanges,
             "Datei ersetzen", this::replacePendingFile,
             "Freigeben", this::approvePending,
@@ -200,7 +215,7 @@ public class SchularchivAdmin {
         filters.add(labeled("Klasse", approvedClassFilterCombo));
 
         JPanel detail = buildUploadDetailPanel(
-            approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea, approvedFileLabel,
+            approvedTitleField, approvedYearField, approvedClassField, approvedSubjectField, approvedTypeCombo, approvedNoteArea, approvedFileLabel, approvedPreviewLabel, approvedDownloadButton,
             "Änderungen speichern", this::saveApprovedChanges,
             "Datei ersetzen", this::replaceApprovedFile,
             "Zur Prüfung zurück", this::moveApprovedBack,
@@ -225,6 +240,8 @@ public class SchularchivAdmin {
         JComboBox<String> typeCombo,
         JTextArea noteArea,
         JLabel fileLabel,
+        JLabel previewLabel,
+        JButton downloadButton,
         String saveLabel,
         Runnable saveAction,
         String replaceFileLabel,
@@ -255,6 +272,17 @@ public class SchularchivAdmin {
         notePanel.add(new JLabel("Hinweis"), BorderLayout.NORTH);
         notePanel.add(new JScrollPane(noteArea), BorderLayout.CENTER);
 
+        JPanel previewPanel = new JPanel(new BorderLayout(0, 8));
+        previewPanel.add(new JLabel("Vorschau"), BorderLayout.NORTH);
+        previewPanel.add(new JScrollPane(previewLabel), BorderLayout.CENTER);
+        JPanel previewActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        previewActions.add(downloadButton);
+        previewPanel.add(previewActions, BorderLayout.SOUTH);
+
+        JPanel centerPanel = new JPanel(new GridLayout(2, 1, 0, 16));
+        centerPanel.add(notePanel);
+        centerPanel.add(previewPanel);
+
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton saveButton = new JButton(saveLabel);
         JButton replaceButton = new JButton(replaceFileLabel);
@@ -273,9 +301,19 @@ public class SchularchivAdmin {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 0));
         panel.add(form, BorderLayout.NORTH);
-        panel.add(notePanel, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);
         panel.add(actions, BorderLayout.SOUTH);
         return panel;
+    }
+
+    private JLabel createPreviewLabel() {
+        JLabel label = new JLabel("Keine Vorschau verfÃ¼gbar", JLabel.CENTER);
+        label.setVerticalAlignment(JLabel.CENTER);
+        label.setHorizontalAlignment(JLabel.CENTER);
+        label.setOpaque(true);
+        label.setBackground(new Color(245, 247, 250));
+        label.setPreferredSize(new Dimension(360, 280));
+        return label;
     }
 
     private JPanel labeled(String text, JComboBox<?> comboBox) {
@@ -473,6 +511,8 @@ public class SchularchivAdmin {
         pendingTypeCombo.setSelectedItem(entry.type);
         pendingNoteArea.setText(entry.note);
         pendingFileLabel.setText(entry.fileName);
+        pendingDownloadButton.setEnabled(!entry.previewUrl.isBlank());
+        loadPreviewAsync(entry, pendingPreviewLabel);
     }
 
     private void clearPendingForm() {
@@ -483,6 +523,8 @@ public class SchularchivAdmin {
         pendingTypeCombo.setSelectedItem("Klassenarbeit");
         pendingNoteArea.setText("");
         pendingFileLabel.setText("Keine Datei");
+        pendingDownloadButton.setEnabled(false);
+        clearPreview(pendingPreviewLabel);
     }
 
     private void savePendingChanges() {
@@ -549,6 +591,8 @@ public class SchularchivAdmin {
         approvedTypeCombo.setSelectedItem(entry.type);
         approvedNoteArea.setText(entry.note);
         approvedFileLabel.setText(entry.fileName);
+        approvedDownloadButton.setEnabled(!entry.previewUrl.isBlank());
+        loadPreviewAsync(entry, approvedPreviewLabel);
     }
 
     private void clearApprovedForm() {
@@ -559,6 +603,8 @@ public class SchularchivAdmin {
         approvedTypeCombo.setSelectedItem("Klassenarbeit");
         approvedNoteArea.setText("");
         approvedFileLabel.setText("Keine Datei");
+        approvedDownloadButton.setEnabled(false);
+        clearPreview(approvedPreviewLabel);
     }
 
     private void saveApprovedChanges() {
@@ -651,6 +697,116 @@ public class SchularchivAdmin {
     private String detectMimeType(Path path) throws IOException {
         String mimeType = Files.probeContentType(path);
         return mimeType == null ? "application/octet-stream" : mimeType;
+    }
+
+    private void loadPreviewAsync(UploadEntry entry, JLabel targetLabel) {
+        clearPreview(targetLabel);
+        if (entry.previewUrl.isBlank()) {
+            targetLabel.setText("Keine Vorschau verfÃ¼gbar");
+            return;
+        }
+        if (!isImageFile(entry.fileName)) {
+            targetLabel.setText("FÃ¼r diesen Dateityp gibt es hier keine Bildvorschau. Bitte herunterladen.");
+            return;
+        }
+
+        targetLabel.setText("Bild wird geladen...");
+        new SwingWorker<ImageIcon, Void>() {
+            @Override
+            protected ImageIcon doInBackground() throws Exception {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(entry.previewUrl)).GET().build();
+                HttpResponse<InputStream> response = apiClient.httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                if (response.statusCode() >= 400) {
+                    throw new IOException("Vorschau konnte nicht geladen werden.");
+                }
+                try (InputStream stream = response.body()) {
+                    BufferedImage image = ImageIO.read(stream);
+                    if (image == null) {
+                        throw new IOException("Bildvorschau konnte nicht gelesen werden.");
+                    }
+                    return new ImageIcon(scaleImage(image, 720, 480));
+                }
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    targetLabel.setText("");
+                    targetLabel.setIcon(get());
+                } catch (Exception error) {
+                    clearPreview(targetLabel);
+                    targetLabel.setText("Vorschau konnte nicht geladen werden.");
+                }
+            }
+        }.execute();
+    }
+
+    private Image scaleImage(BufferedImage image, int maxWidth, int maxHeight) {
+        int width = image.getWidth();
+        int height = image.getHeight();
+        if (width <= 0 || height <= 0) {
+            return image;
+        }
+
+        double ratio = Math.min((double) maxWidth / width, (double) maxHeight / height);
+        ratio = Math.min(ratio, 1.0d);
+        int scaledWidth = Math.max(1, (int) Math.round(width * ratio));
+        int scaledHeight = Math.max(1, (int) Math.round(height * ratio));
+        return image.getScaledInstance(scaledWidth, scaledHeight, Image.SCALE_SMOOTH);
+    }
+
+    private boolean isImageFile(String fileName) {
+        String lower = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
+        return lower.endsWith(".png")
+            || lower.endsWith(".jpg")
+            || lower.endsWith(".jpeg")
+            || lower.endsWith(".gif")
+            || lower.endsWith(".webp")
+            || lower.endsWith(".bmp");
+    }
+
+    private void clearPreview(JLabel targetLabel) {
+        targetLabel.setIcon(null);
+        targetLabel.setText("Keine Vorschau verfÃ¼gbar");
+    }
+
+    private void downloadUploadFile(UploadEntry entry) {
+        if (entry == null || entry.previewUrl.isBlank()) {
+            showError("FÃ¼r diesen Eintrag ist keine Datei verfÃ¼gbar.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new java.io.File(entry.fileName));
+        if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        Path target = chooser.getSelectedFile().toPath();
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(entry.previewUrl)).GET().build();
+                HttpResponse<InputStream> response = apiClient.httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                if (response.statusCode() >= 400) {
+                    throw new IOException("Datei konnte nicht heruntergeladen werden.");
+                }
+                try (InputStream stream = response.body()) {
+                    Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    JOptionPane.showMessageDialog(null, "Datei wurde gespeichert.");
+                } catch (Exception error) {
+                    showError("Download fehlgeschlagen: " + error.getMessage());
+                }
+            }
+        }.execute();
     }
 
     private void runActionAsync(String action, Map<String, Object> payload, Runnable onSuccess) {
