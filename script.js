@@ -35,6 +35,7 @@ const previewTitle = document.getElementById("previewTitle");
 const previewMeta = document.getElementById("previewMeta");
 const previewNote = document.getElementById("previewNote");
 const previewImageWrap = document.getElementById("previewImageWrap");
+const previewImageLink = document.getElementById("previewImageLink");
 const previewImage = document.getElementById("previewImage");
 const previewFrameWrap = document.getElementById("previewFrameWrap");
 const previewFrame = document.getElementById("previewFrame");
@@ -230,6 +231,7 @@ function renderArchive() {
   previewFallback.classList.add("hidden");
   previewNote.classList.add("hidden");
   previewImage.removeAttribute("src");
+  previewImageLink.removeAttribute("href");
   previewFrame.removeAttribute("src");
 
   if (!selectedTeacherId || !selectedSubject || !selectedClass) {
@@ -290,6 +292,7 @@ function renderPreview(item, teacher) {
   if (isImageFile(item.fileName)) {
     previewImage.src = item.previewUrl;
     previewImage.alt = item.title;
+    previewImageLink.href = item.previewUrl;
     previewImageWrap.classList.remove("hidden");
     return;
   }

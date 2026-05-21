@@ -82,6 +82,7 @@ public class SchularchivAdmin {
     private final JLabel pendingFileLabel = new JLabel("Keine Datei");
     private final JLabel pendingPreviewLabel = createPreviewLabel();
     private final JButton pendingDownloadButton = new JButton("Datei herunterladen");
+    private final JButton pendingUploadButton = new JButton("Neu hochladen");
     private final JButton pendingOpenButton = new JButton("Datei öffnen");
 
     private final JComboBox<Teacher> approvedTeacherFilterCombo = new JComboBox<>(approvedTeacherFilterModel);
@@ -109,6 +110,7 @@ public class SchularchivAdmin {
         approvedDownloadButton.addActionListener(event -> downloadUploadFile(approvedList.getSelectedValue()));
         pendingOpenButton.addActionListener(event -> openUploadFile(pendingList.getSelectedValue()));
         approvedOpenButton.addActionListener(event -> openUploadFile(approvedList.getSelectedValue()));
+        pendingUploadButton.addActionListener(event -> submitUploadFromAdmin());
         log("Admin-App vorbereitet. API: " + apiBaseUrl);
     }
 
@@ -200,6 +202,9 @@ public class SchularchivAdmin {
         split.setResizeWeight(0.42);
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        topBar.add(pendingUploadButton);
+        panel.add(topBar, BorderLayout.NORTH);
         panel.add(split, BorderLayout.CENTER);
         return panel;
     }
@@ -718,6 +723,104 @@ public class SchularchivAdmin {
     private String detectMimeType(Path path) throws IOException {
         String mimeType = Files.probeContentType(path);
         return mimeType == null ? "application/octet-stream" : mimeType;
+    }
+
+    private void submitUploadFromAdmin() {
+        if (state.teachers.isEmpty()) {
+            showError("Es sind noch keine Lehrer vorhanden.");
+            return;
+        }
+
+        JComboBox<Teacher> teacherCombo = new JComboBox<>(state.teachersSorted().toArray(new Teacher[0]));
+        JComboBox<String> subjectCombo = new JComboBox<>();
+        JComboBox<String> classCombo = new JComboBox<>(CLASS_LEVELS);
+        JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Klassenarbeit", "Test"});
+        JTextField yearField = new JTextField(String.valueOf(java.time.Year.now().getValue()));
+        JTextField titleField = new JTextField();
+        JTextArea noteField = new JTextArea(3, 20);
+
+        teacherCombo.addActionListener(event -> {
+            Teacher selectedTeacher = (Teacher) teacherCombo.getSelectedItem();
+            subjectCombo.removeAllItems();
+            if (selectedTeacher != null) {
+                for (String subject : selectedTeacher.subjects) {
+                    subjectCombo.addItem(subject);
+                }
+            }
+        });
+        teacherCombo.setSelectedIndex(0);
+
+        JPanel form = new JPanel(new GridLayout(0, 2, 10, 10));
+        form.add(new JLabel("Lehrer"));
+        form.add(teacherCombo);
+        form.add(new JLabel("Fach"));
+        form.add(subjectCombo);
+        form.add(new JLabel("Klasse"));
+        form.add(classCombo);
+        form.add(new JLabel("Art"));
+        form.add(typeCombo);
+        form.add(new JLabel("Jahr"));
+        form.add(yearField);
+        form.add(new JLabel("Titel"));
+        form.add(titleField);
+
+        noteField.setLineWrap(true);
+        noteField.setWrapStyleWord(true);
+        JScrollPane notePane = new JScrollPane(noteField);
+
+        JPanel container = new JPanel(new BorderLayout(0, 10));
+        container.add(form, BorderLayout.NORTH);
+        JPanel noteWrap = new JPanel(new BorderLayout(0, 6));
+        noteWrap.add(new JLabel("Hinweis"), BorderLayout.NORTH);
+        noteWrap.add(notePane, BorderLayout.CENTER);
+        container.add(noteWrap, BorderLayout.CENTER);
+
+        int result = JOptionPane.showConfirmDialog(null, container, "Neuen Upload einreichen", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        Teacher teacher = (Teacher) teacherCombo.getSelectedItem();
+        String subject = String.valueOf(subjectCombo.getSelectedItem() == null ? "" : subjectCombo.getSelectedItem()).trim();
+        String classLevel = String.valueOf(classCombo.getSelectedItem() == null ? "" : classCombo.getSelectedItem()).trim();
+        String type = String.valueOf(typeCombo.getSelectedItem() == null ? "" : typeCombo.getSelectedItem()).trim();
+        String year = yearField.getText().trim();
+        String title = titleField.getText().trim();
+        String note = noteField.getText().trim();
+
+        if (teacher == null || subject.isBlank() || classLevel.isBlank() || type.isBlank() || year.isBlank() || title.isBlank()) {
+            showError("Bitte alle Pflichtfelder ausfüllen.");
+            return;
+        }
+
+        FilePayload filePayload = chooseImageFilePayload();
+        if (filePayload == null) {
+            return;
+        }
+
+        runActionAsync("submitUpload", Map.of(
+            "teacherId", teacher.id,
+            "subject", subject,
+            "classLevel", classLevel,
+            "type", type,
+            "year", year,
+            "title", title,
+            "note", note,
+            "fileName", filePayload.fileName,
+            "fileDataUrl", filePayload.dataUrl
+        ), null);
+    }
+
+    private FilePayload chooseImageFilePayload() {
+        FilePayload filePayload = chooseFilePayload();
+        if (filePayload == null) {
+            return null;
+        }
+        if (!String.valueOf(filePayload.dataUrl).startsWith("data:image/")) {
+            showError("Es können nur Bilddateien hochgeladen werden.");
+            return null;
+        }
+        return filePayload;
     }
 
     private void loadPreviewAsync(UploadEntry entry, JLabel targetLabel) {

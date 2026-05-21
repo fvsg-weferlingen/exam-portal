@@ -1,4 +1,4 @@
-const { readState } = require("./_lib/github-store");
+const { readState, withResolvedPreviewUrls } = require("./_lib/github-store");
 
 module.exports = async function handler(request, response) {
   if (request.method !== "GET") {
@@ -8,7 +8,7 @@ module.exports = async function handler(request, response) {
 
   try {
     const { state } = await readState();
-    response.status(200).json(state);
+    response.status(200).json(withResolvedPreviewUrls(state, request));
   } catch (error) {
     response.status(500).json({ error: error.message || "Status konnte nicht geladen werden." });
   }

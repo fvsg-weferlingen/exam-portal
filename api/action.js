@@ -1,5 +1,5 @@
 const crypto = require("node:crypto");
-const { mutateState, saveUploadFile } = require("./_lib/github-store");
+const { mutateState, saveUploadFile, withResolvedPreviewUrls } = require("./_lib/github-store");
 
 module.exports = async function handler(request, response) {
   if (request.method !== "POST") {
@@ -11,7 +11,10 @@ module.exports = async function handler(request, response) {
 
   try {
     const result = await handleAction(action, payload || {});
-    response.status(200).json(result);
+    response.status(200).json({
+      ...result,
+      state: result?.state ? withResolvedPreviewUrls(result.state, request) : result?.state
+    });
   } catch (error) {
     const status = error.statusCode || error.status || 400;
     response.status(status).json({ error: error.message || "Aktion fehlgeschlagen." });

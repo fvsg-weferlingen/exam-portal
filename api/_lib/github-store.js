@@ -77,6 +77,24 @@ async function getRepositoryFile(path) {
   }
 }
 
+async function getRepositoryBinaryFile(path) {
+  const config = getConfig();
+
+  try {
+    const file = await githubRequest(`/contents/${encodePath(path)}?ref=${encodeURIComponent(config.branch)}`);
+    return {
+      sha: file.sha,
+      content: Buffer.from(file.content, "base64"),
+      fileName: file.name
+    };
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
 async function putRepositoryFile(path, contentBuffer, message, sha) {
   const config = getConfig();
   const payload = {
@@ -158,7 +176,7 @@ async function saveUploadFile({ fileName, fileDataUrl, teacherCode, subject, cla
 
   return {
     path: uploadPath,
-    previewUrl: buildRawUrl(uploadPath)
+    previewUrl: buildPreviewUrl(uploadPath)
   };
 }
 
@@ -174,9 +192,28 @@ function parseDataUrl(dataUrl) {
   };
 }
 
-function buildRawUrl(path) {
-  const config = getConfig();
-  return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${encodeURI(path)}`;
+function buildPreviewUrl(path) {
+  return `/api/file?path=${encodeURIComponent(path)}`;
+}
+
+function buildAbsolutePreviewUrl(request, path) {
+  const host = request.headers["x-forwarded-host"] || request.headers.host;
+  const protocol = request.headers["x-forwarded-proto"] || "https";
+  return `${protocol}://${host}${buildPreviewUrl(path)}`;
+}
+
+function withResolvedPreviewUrls(state, request) {
+  return {
+    ...state,
+    pendingUploads: (state.pendingUploads || []).map((entry) => ({
+      ...entry,
+      previewUrl: entry.filePath ? buildAbsolutePreviewUrl(request, entry.filePath) : entry.previewUrl || ""
+    })),
+    approvedUploads: (state.approvedUploads || []).map((entry) => ({
+      ...entry,
+      previewUrl: entry.filePath ? buildAbsolutePreviewUrl(request, entry.filePath) : entry.previewUrl || ""
+    }))
+  };
 }
 
 function encodePath(path) {
@@ -206,7 +243,9 @@ function getFileExtension(fileName) {
 
 module.exports = {
   DEFAULT_STATE,
+  getRepositoryBinaryFile,
   mutateState,
   readState,
-  saveUploadFile
+  saveUploadFile,
+  withResolvedPreviewUrls
 };
